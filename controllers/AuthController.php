@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../config/db.php';
+/** @var PDO $pdo */
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
