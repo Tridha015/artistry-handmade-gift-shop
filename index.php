@@ -7,7 +7,7 @@
     <a href="views/custom_order/form.php" class="btn-custom">✨ Customize Your Craft</a>
 </section>
 
-<!-- 10 Categories Grid-->
+<!-- Categories Grid-->
 <h2 class="section-title" id="categories">Explore Our Craft Albums</h2>
 
 <div class="categories-grid">
