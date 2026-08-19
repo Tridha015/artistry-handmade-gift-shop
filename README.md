@@ -1,1 +1,1 @@
-# artistry-handmade-gift-shop
+# Artistry of Tridha - Handmade Craft Management System
