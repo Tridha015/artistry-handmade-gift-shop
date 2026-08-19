@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
     <title><?php echo $pageTitle ?? 'Artistry of Tridha'; ?></title>
-    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="/artistry/assets/css/style.css">
 </head>
 <body>
 
 <nav class="navbar">
 <a href="../../index.php" class="brand">
-        <img src="../../assets/images/Logo.png" alt="Artistry Logo" class="brand-logo">
+<img src="<?php echo (file_exists($_SERVER['DOCUMENT_ROOT'] . '/artistry/assets/images/Logo.png')) ? '/artistry/assets/images/Logo.png' : '/artistry/assets/images/logo.png'; ?>" alt="Artistry Logo" class="brand-logo">
         
     </a>
     
