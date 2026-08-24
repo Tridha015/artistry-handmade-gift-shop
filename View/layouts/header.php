@@ -15,11 +15,11 @@
     <div class="nav-links">
         <?php if (isset($userRole)): ?>
             <span class="user-badge"><?php echo htmlspecialchars($userRole); ?></span>
-            <a href="../../index.php">Home</a>
+            <a href="artistry/index.php">Home</a>
             <a href="../../index.php">Logout</a>
         <?php else: ?>
             <a href="../../index.php">Home</a>
-            <a href="../../View/customer/custom_order.php">Custom Order</a>
+            <a href="View/customer/custom_order.php">Custom Order</a>
             <a href="../../View/auth/login.php">Login</a>
         <?php endif; ?>
     </div>
