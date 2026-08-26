@@ -1,64 +1,75 @@
 <?php
 session_start();
-$pageTitle = "Customer Dashboard - Artistry of Tridha";
+require_once __DIR__ . '/../../Model/OrderModel.php';
+ 
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Customer') {
+    header("Location: ../auth/login.php?error=Unauthorized Access");
+    exit();
+}
+ 
+$pageTitle = "My Orders - Artistry of Tridha";
 require_once __DIR__ . '/../layouts/header.php';
-
-$username = $_SESSION["loggedInUsername"] ?? "Customer";
+ 
+$customerId = $_SESSION['user_id'];
+$orders = getOrdersByCustomer($customerId);
 ?>
-
-<style>
-    .dashboard-wrapper { width: 75%; margin: 40px auto; background: #ffffff; padding: 30px; border: 1px solid #dddddd; font-family: Arial, sans-serif; }
-    .dash-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #eeeeee; padding-bottom: 15px; margin-bottom: 20px; }
-    .dash-header h2 { margin: 0 0 5px 0; color: #222; font-size: 24px; }
-    .dash-header p { margin: 0; color: #666; font-size: 15px; }
-    .btn-new-order { background-color: #f1c40f; color: #333; padding: 10px 18px; text-decoration: none; font-weight: bold; border: 1px solid #d4ac0d; font-size: 14px; }
-    .btn-new-order:hover { background-color: #d4ac0d; }
-    .custom-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    .custom-table th, .custom-table td { padding: 12px 15px; text-align: left; border: 1px solid #dddddd; }
-    .custom-table th { background-color: #f4f4f4; color: #333; font-weight: bold; }
-    .badge-review { background: #fdebd0; color: #a04000; padding: 4px 8px; font-size: 12px; font-weight: bold; }
-    .badge-ready { background: #d5f5e3; color: #1e8449; padding: 4px 8px; font-size: 12px; font-weight: bold; }
-    .btn-action { background: #5d6d7e; color: white; padding: 6px 12px; text-decoration: none; font-size: 13px; border-radius: 2px; }
-</style>
-
-<div class="dashboard-wrapper">
-    <div class ="dash-header">
-        <div>
-            <h2>My Orders & Tracking</h2>
-            <p>Track your regular and custom craft requests in real-time</p>
-        </div>
-        <a href="custom_order.php" class="btn-new-order">+ New Custom Order</a>
-    </div>
-    
-    <table class="custom-table">
-        <thead>
-            <tr>
-                <th>Order ID</th>
-                <th>Craft Details</th>
-                <th>Estimated Cost</th>
-                <th>Delivery Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>#CR-201</td>
-                <td><strong>Explosion Box</strong><br>3 Layers, Maroon Theme</td>
-                <td>1,800 ৳</td>
-                <td><span class="badge-review">Under Review</span></td>
-                <td><a href="#" class="btn-action">Details</a></td>
-            </tr>
-            <tr>
-                <td>#ORD-102</td>
-                <td><strong>Handmade Floral Bouquet</strong><br>Pastel Ribbon</td>
-                <td>850 ৳</td>
-                <td><span class="badge-ready">Ready for Pickup</span></td>
-                <td><a href="#" class="btn-action">Track</a></td>
-            </tr>
-        </tbody>
-    </table>
+ 
+<div style="max-width: 1100px; margin: 30px auto; font-family: sans-serif; padding: 0 20px;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+<div>
+<h2>My Activity & Orders</h2>
+<p>Welcome back, <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong></p>
 </div>
-
+<a href="custom_order.php" style="background-color: rgb(87, 37, 83); color: white; padding: 10px 18px; text-decoration: none; border-radius: 4px; font-weight: bold;">+ Request Custom Craft</a>
+</div>
+ 
+    <?php if (isset($_GET['success'])): ?>
+<div style="background-color: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+<?php echo htmlspecialchars($_GET['success']); ?>
+</div>
+<?php endif; ?>
+ 
+    <h3>Placed Orders & Custom Requests</h3>
+<table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: left;">
+<thead>
+<tr style="background-color: #572553; color: white;">
+<th>Order Type</th>
+<th>Item / Requirements</th>
+<th>Amount (৳)</th>
+<th>Order Status</th>
+<th>Delivery Progress</th>
+</tr>
+</thead>
+<tbody>
+<?php if (mysqli_num_rows($orders) > 0): ?>
+<?php while ($ord = mysqli_fetch_assoc($orders)): ?>
+<tr>
+<td><strong><?php echo htmlspecialchars($ord['order_type']); ?></strong></td>
+<td><?php echo htmlspecialchars($ord['item_name']); ?></td>
+<td>৳ <?php echo number_format($ord['amount'], 2); ?></td>
+<td>
+<span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; color: white; background-color: <?php echo ($ord['status'] === 'Accepted' || $ord['status'] === 'Confirmed') ? '#28a745' : (($ord['status'] === 'Rejected') ? '#dc3545' : '#ffc107'); ?>;">
+<?php echo htmlspecialchars($ord['status']); ?>
+</span>
+</td>
+<td>
+<?php if ($ord['delivery_status'] !== 'N/A' && !empty($ord['delivery_status'])): ?>
+<span style="font-weight: bold; color: #2b6cb0;"><?php echo htmlspecialchars($ord['delivery_status']); ?></span>
+<?php else: ?>
+<span style="color: #888;">Reviewing / In Workshop</span>
+<?php endif; ?>
+</td>
+</tr>
+<?php endwhile; ?>
+<?php else: ?>
+<tr>
+<td colspan="5" style="text-align: center; color: #888; padding: 20px;">You haven't placed any orders yet.</td>
+</tr>
+<?php endif; ?>
+</tbody>
+</table>
+</div>
+ 
 <?php
 require_once __DIR__ . '/../layouts/footer.php';
 ?>
