@@ -11,7 +11,7 @@ require_once __DIR__ . '/../layouts/header.php';
 </head>
 <body>
     <div style="max-width: 400px; margin: 60px auto; padding: 30px; border: 1px solid #ddd; border-radius: 8px; font-family: sans-serif;">
-        <h2 style="text-align: center; margin-bottom: 20px;">Platform Login</h2>
+        <h2 style="text-align: center; margin-bottom: 20px;">Login Now!</h2>
 
         <?php if (isset($_GET['error'])): ?>
             <div style="background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
