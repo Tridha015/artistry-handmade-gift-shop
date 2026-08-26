@@ -11,7 +11,7 @@ $pageTitle = "Seller Dashboard - Artistry";
 require_once __DIR__ . '/../layouts/header.php';
 
 $seller_id = $_SESSION['user_id'];
-$products = getProductsBySeller($seller_id);
+$products  = getProductsBySeller($seller_id);
 ?>
 
 <div style="max-width: 1100px; margin: 30px auto; font-family: sans-serif; padding: 0 20px;">
@@ -29,6 +29,12 @@ $products = getProductsBySeller($seller_id);
         </div>
     <?php endif; ?>
 
+    <?php if (isset($_GET['error'])): ?>
+        <div style="background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+            <?php echo htmlspecialchars($_GET['error']); ?>
+        </div>
+    <?php endif; ?>
+
     <h3>My Inventory</h3>
     <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: left;">
         <thead>
@@ -39,6 +45,7 @@ $products = getProductsBySeller($seller_id);
                 <th>Price</th>
                 <th>Stock</th>
                 <th>Status</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -57,11 +64,15 @@ $products = getProductsBySeller($seller_id);
                                 <?php echo ($p['stock'] > 0) ? 'Available' : 'Out of Stock'; ?>
                             </span>
                         </td>
+                        <td>
+                            <a href="edit_product.php?id=<?php echo $p['id']; ?>" style="color: #007bff; text-decoration: none; font-weight: bold; margin-right: 12px;">Edit</a>
+                            <a href="../../Controller/ProductController.php?action=delete&id=<?php echo $p['id']; ?>" onclick="return confirm('Are you sure you want to delete this product?');" style="color: #dc3545; text-decoration: none; font-weight: bold;">Delete</a>
+                        </td>
                     </tr>
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="6" style="text-align: center; color: #888; padding: 20px;">No craft products listed yet. Click "+ Add New Craft" to start selling.</td>
+                    <td colspan="7" style="text-align: center; color: #888; padding: 20px;">No craft products listed yet. Click "+ Add New Craft" to start selling.</td>
                 </tr>
             <?php endif; ?>
         </tbody>
