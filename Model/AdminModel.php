@@ -16,12 +16,12 @@ function getAdminStats() {
     $riderRes = mysqli_query($conn, "SELECT COUNT(*) AS total FROM users WHERE role = 'Delivery' AND status = 'Active'");
     $activeRiders = mysqli_fetch_assoc($riderRes)['total'] ?? 0;
 
-    return [
+    return array(
         'revenue' => $totalRev,
         'custom_pending' => $pendingReq,
         'sellers' => $activeSellers,
         'riders' => $activeRiders
-    ];
+    );
 }
 
 function getAllCustomOrders() {
@@ -35,18 +35,28 @@ function getAllCustomOrders() {
 
 function getAllStoreOrders() {
     global $conn;
-    $sql = "SELECT o.*, p.title AS product_name, d.id AS delivery_id, d.rider_id, d.delivery_status 
+    $sql = "SELECT o.*, p.title AS product_name, u.name AS customer_name, u.phone AS customer_phone,
+                   d.id AS delivery_id, d.rider_id, d.delivery_status 
             FROM orders o
             JOIN products p ON o.product_id = p.id
+            JOIN users u ON o.customer_id = u.id
             LEFT JOIN deliveries d ON o.id = d.order_id
             ORDER BY o.id DESC";
     return mysqli_query($conn, $sql);
 }
+
+function getAllRegistrations() {
+    global $conn;
+    $sql = "SELECT * FROM users WHERE role != 'Admin' ORDER BY id DESC";
+    return mysqli_query($conn, $sql);
+}
+
 function getActiveRiders() {
     global $conn;
     $sql = "SELECT id, name FROM users WHERE role = 'Delivery' AND status = 'Active'";
     return mysqli_query($conn, $sql);
 }
+
 function updateCustomOrderStatus($orderId, $status) {
     global $conn;
     $orderId = intval($orderId);
@@ -54,6 +64,23 @@ function updateCustomOrderStatus($orderId, $status) {
     $sql = "UPDATE custom_orders SET status = '$status' WHERE id = $orderId";
     return mysqli_query($conn, $sql);
 }
+
+function updateStoreOrderStatus($orderId, $status) {
+    global $conn;
+    $orderId = intval($orderId);
+    $status = mysqli_real_escape_string($conn, $status);
+    $sql = "UPDATE orders SET status = '$status' WHERE id = $orderId";
+    return mysqli_query($conn, $sql);
+}
+
+function updateUserAccountStatus($userId, $status) {
+    global $conn;
+    $userId = intval($userId);
+    $status = mysqli_real_escape_string($conn, $status);
+    $sql = "UPDATE users SET status = '$status' WHERE id = $userId";
+    return mysqli_query($conn, $sql);
+}
+
 function assignRiderToOrder($orderId, $riderId, $address) {
     global $conn;
     $orderId = intval($orderId);

@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
 }
 
 if (isset($_GET['action']) && isset($_GET['order_id'])) {
-    $orderId = $_GET['order_id'];
+    $orderId = intval($_GET['order_id']);
     $action = $_GET['action'];
 
     if ($action === 'accept') {
@@ -21,10 +21,31 @@ if (isset($_GET['action']) && isset($_GET['order_id'])) {
     exit();
 }
 
+if (isset($_GET['action']) && $_GET['action'] === 'confirm_order' && isset($_GET['order_id'])) {
+    $orderId = intval($_GET['order_id']);
+    updateStoreOrderStatus($orderId, 'Confirmed');
+    header("Location: ../View/admin/dashboard.php?success=Payment verified and order confirmed!");
+    exit();
+}
+
+if (isset($_GET['action']) && isset($_GET['user_id'])) {
+    $userId = intval($_GET['user_id']);
+    $action = $_GET['action'];
+
+    if ($action === 'approve_user') {
+        updateUserAccountStatus($userId, 'Active');
+    } elseif ($action === 'suspend_user') {
+        updateUserAccountStatus($userId, 'Suspended');
+    }
+
+    header("Location: ../View/admin/dashboard.php?success=User status updated successfully");
+    exit();
+}
+
 if (isset($_POST['action']) && $_POST['action'] === 'assign_rider') {
-    $orderId = $_POST['order_id'];
-    $riderId = $_POST['rider_id'];
-    $address = $_POST['address'];
+    $orderId = intval($_POST['order_id']);
+    $riderId = intval($_POST['rider_id']);
+    $address = trim($_POST['address']);
 
     assignRiderToOrder($orderId, $riderId, $address);
     header("Location: ../View/admin/dashboard.php?success=Rider assigned successfully");
