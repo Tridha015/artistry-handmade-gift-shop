@@ -69,4 +69,10 @@ function getAllProducts() {
     $sql = "SELECT * FROM products ORDER BY id DESC";
     return mysqli_query($conn, $sql);
 }
+function getProductsByCategory($category) {
+    global $conn;
+    $category = mysqli_real_escape_string($conn, $category);
+    $sql = "SELECT * FROM products WHERE category = '$category' ORDER BY id DESC";
+    return mysqli_query($conn, $sql);
+}
 ?>

@@ -14,7 +14,8 @@ function registerUser($name, $email, $phone, $password, $role) {
 }
 function getUserByEmail($email) {
     global $conn;
-    $sql = "SELECT * FROM users WHERE email = '$email'";
+    $email = mysqli_real_escape_string($conn, strtolower(trim($email)));
+    $sql = "SELECT * FROM users WHERE LOWER(email) = '$email' LIMIT 1";
     $result = mysqli_query($conn, $sql);
     
     if ($result && mysqli_num_rows($result) > 0) {
@@ -54,5 +55,15 @@ function getDashboardStats() {
         'pending_orders' => $pendingOrders,
         'total_revenue'  => $totalRevenue
     ];
+}
+function getUserById($id) {
+    global $conn;
+    $id = intval($id);
+    $sql = "SELECT * FROM users WHERE id = $id";
+    $result = mysqli_query($conn, $sql);
+    if ($result && mysqli_num_rows($result) > 0) {
+        return mysqli_fetch_assoc($result);
+    }
+    return false;
 }
 ?>

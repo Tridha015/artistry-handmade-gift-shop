@@ -17,20 +17,23 @@ function createCustomOrder($customerId, $craftType, $craftSize, $layers, $colorT
             VALUES ($customerId, '$craftType', '$craftSize', $layers, '$colorTheme', $budget, '$sampleImage', '$instructions', '$status')";
     return mysqli_query($conn, $sql);
 }
- 
-function getOrdersByCustomer($customerId) {
+
+function getCustomOrdersByCustomer($customerId) {
     global $conn;
     $customerId = intval($customerId);
+    $sql = "SELECT * FROM custom_orders WHERE customer_id = $customerId ORDER BY id DESC";
+    return mysqli_query($conn, $sql);
+}
 
-    $sql = "SELECT id, craft_type AS item_name, budget AS amount, status, 'Custom Craft' AS order_type, 'N/A' AS delivery_status 
-            FROM custom_orders 
-            WHERE customer_id = $customerId
-            ORDER BY id DESC";
-
-    $result = mysqli_query($conn, $sql);
-    if (!$result) {
-        die("Order Query Error: " . mysqli_error($conn));
-    }
-    return $result;
+function getStoreOrdersByCustomer($customerId) {
+    global $conn;
+    $customerId = intval($customerId);
+    $sql = "SELECT o.*, p.title AS product_name, d.delivery_status 
+            FROM orders o 
+            JOIN products p ON o.product_id = p.id 
+            LEFT JOIN deliveries d ON o.id = d.order_id 
+            WHERE o.customer_id = $customerId 
+            ORDER BY o.id DESC";
+    return mysqli_query($conn, $sql);
 }
 ?>

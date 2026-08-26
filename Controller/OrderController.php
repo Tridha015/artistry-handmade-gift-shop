@@ -41,8 +41,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'submit_custom_order') {
     $isCreated = createCustomOrder($customerId, $craftType, $craftSize, $layers, $colorTheme, $budget, $sampleImage, $instructions);
  
     if ($isCreated) {
-        header("Location: ../View/customer/dashboard.php?success=Custom craft request submitted successfully!");
-    } else {
+        header("Location: ../View/customer/cart.php?success=Custom craft request submitted successfully!");
+        } else {
         header("Location: ../View/customer/custom_order.php?error=Failed to submit request.");
     }
     exit();
@@ -75,7 +75,6 @@ if (isset($_POST['action']) && $_POST['action'] === 'place_cart_order') {
     }
  
     unset($_SESSION['cart']);
-    header("Location: ../View/customer/dashboard.php?success=Order placed successfully! Awaiting payment verification.");
-    exit();
+    header("Location: ../View/customer/cart.php?success=Order placed successfully! Awaiting payment verification.");    exit();
 }
 ?>
