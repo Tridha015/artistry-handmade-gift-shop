@@ -1,7 +1,24 @@
 <?php
+session_start();
+require_once __DIR__ . '/../../Model/AdminModel.php';
+
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
+    header("Location: ../auth/login.php?error=Unauthorized Access");
+    exit();
+}
 $pageTitle = "Admin - Artistry of Tridha";
 $userRole = "Admin";
 require_once __DIR__ . '/../layouts/header.php';
+
+$stats = getAdminStats();
+$customOrders = getAllCustomOrders();
+$storeOrders = getAllStoreOrders();
+$riders = getActiveRiders();
+
+$riderList = [];
+while ($r = mysqli_fetch_assoc($riders)) {
+    $riderList[] = $r;
+}
 ?>
 
 <div class="stats-grid">
@@ -79,36 +96,44 @@ require_once __DIR__ . '/../layouts/header.php';
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td><b>#ORD-101</b></td>
-                <td>Vintage Scrapbook (Large)</td>
-                <td>House 14, Road 27, Dhanmondi, Dhaka</td>
-                <td>2,800 ৳</td>
-                <td>
-                    <select class="table-select">
-                        <option value="1">Rider: Rafiq Ahmed</option>
-                        <option value="2">Rider: Shakil Khan</option>
-                    </select>
-                </td>
-                <td><span class="badge badge-making">Making</span></td>
-            </tr>
-            <tr>
-                <td><b>#ORD-102</b></td>
-                <td>Handmade Floral Bouquet</td>
-                <td>Sector 7, Uttara, Dhaka</td>
-                <td>850 ৳</td>
-                <td>
-                    <select class="table-select">
-                        <option value="2" selected>Rider: Shakil Khan</option>
-                        <option value="1">Rider: Rafiq Ahmed</option>
-                    </select>
-                </td>
-                <td><span class="badge badge-ready">Ready for Pickup</span></td>
-            </tr>
+        <?php if (mysqli_num_rows($storeOrders) > 0): ?>
+                <?php while ($ord = mysqli_fetch_assoc($storeOrders)): ?>
+                    <tr>
+                        <td><b>#ORD-<?php echo $ord['id']; ?></b></td>
+                        <td><?php echo htmlspecialchars($ord['product_name']); ?> (Qty: <?php echo $ord['quantity']; ?>)</td>
+                        <td><?php echo htmlspecialchars($ord['delivery_address']); ?></td>
+                        <td><?php echo number_format($ord['total_price'], 2); ?> ৳</td>
+                        <td>
+                            <form action="../../Controller/AdminController.php" method="POST" style="margin: 0;">
+                                <input type="hidden" name="action" value="assign_rider">
+                                <input type="hidden" name="order_id" value="<?php echo $ord['id']; ?>">
+                                <input type="hidden" name="address" value="<?php echo htmlspecialchars($ord['delivery_address']); ?>">
+                                <select name="rider_id" class="table-select" onchange="this.form.submit()">
+                                    <option value="">Select Rider </option>
+                                    <?php foreach ($riderList as $rider): ?>
+                                        <option value="<?php echo $rider['id']; ?>" <?php echo (isset($ord['rider_id']) && $ord['rider_id'] == $rider['id']) ? 'selected' : ''; ?>>
+                                            Rider: <?php echo htmlspecialchars($rider['name']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </form>
+                        </td>
+                        <td>
+                            <span class="badge <?php echo ($ord['status'] === 'Confirmed') ? 'badge-ready' : 'badge-making'; ?>">
+                                <?php echo htmlspecialchars($ord['status']); ?>
+                            </span>
+                        </td>
+                    </tr>
+                <?php endwhile; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #888;">No regular store orders placed yet.</td>
+                </tr>
+            <?php endif; ?>
         </tbody>
     </table>
 </div>
 
 <?php
-require_once __DIR__ . '/../layouts/footer.php';
+require_once __DIR__ . '/../layouts/footer.php'
 ?>
