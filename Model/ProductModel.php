@@ -66,10 +66,7 @@ function deleteProduct($productId, $sellerId) {
 
 function getAllProducts() {
     global $conn;
-    $sql = "SELECT p.*, u.name AS artisan_name 
-            FROM products p 
-            JOIN users u ON p.seller_id = u.id 
-            ORDER BY p.id DESC";
+    $sql = "SELECT * FROM products ORDER BY id DESC";
     return mysqli_query($conn, $sql);
 }
 ?>

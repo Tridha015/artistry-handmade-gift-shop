@@ -21,16 +21,16 @@ function createCustomOrder($customerId, $craftType, $craftSize, $layers, $colorT
 function getOrdersByCustomer($customerId) {
     global $conn;
     $customerId = intval($customerId);
-    $sql = "SELECT 'Store Order' AS order_type, o.id, p.title AS item_name, o.total_price AS amount, o.status, d.delivery_status 
-            FROM orders o 
-            JOIN products p ON o.product_id = p.id 
-            LEFT JOIN deliveries d ON o.id = d.order_id 
-            WHERE o.customer_id = $customerId
-            UNION ALL
-            SELECT 'Custom Order' AS order_type, co.id, co.craft_type AS item_name, co.budget AS amount, co.status, 'N/A' AS delivery_status 
-            FROM custom_orders co 
-            WHERE co.customer_id = $customerId
+
+    $sql = "SELECT id, craft_type AS item_name, budget AS amount, status, 'Custom Craft' AS order_type, 'N/A' AS delivery_status 
+            FROM custom_orders 
+            WHERE customer_id = $customerId
             ORDER BY id DESC";
-    return mysqli_query($conn, $sql);
+
+    $result = mysqli_query($conn, $sql);
+    if (!$result) {
+        die("Order Query Error: " . mysqli_error($conn));
+    }
+    return $result;
 }
 ?>

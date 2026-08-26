@@ -67,7 +67,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'login') {
         } elseif ($user['role'] === 'Delivery') {
             header("Location: ../View/delivery/dashboard.php");
         } else {
-            header("Location: ../View/customer/dashboard.php");
+            // Customer সরাসরি Homepage এ রিডাইরেক্ট হবে
+            header("Location: ../index.php?success=Login successful! Welcome back.");
         }
         exit();
     } else {
@@ -79,7 +80,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'login') {
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     session_unset();
     session_destroy();
-    header("Location: ../View/auth/login.php");
+    header("Location: ../index.php?success=Logged out successfully");
     exit();
 }
 ?>
