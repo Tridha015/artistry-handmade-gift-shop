@@ -9,7 +9,7 @@ $grandTotal = 0;
 
 $customerId = $_SESSION['user_id'] ?? 0;
 $customOrders = ($customerId > 0) ? getCustomOrdersByCustomer($customerId) : null;
-$storeOrders  = ($customerId > 0) ? getStoreOrdersByCustomer($customerId) : null;
+$storeOrders  = ($customerId > 0) ? getOrdersByCustomer($customerId) : null;
 ?>
 
 <div style="max-width: 1050px; margin: 30px auto; font-family: sans-serif; padding: 0 20px;">
@@ -118,7 +118,6 @@ $storeOrders  = ($customerId > 0) ? getStoreOrdersByCustomer($customerId) : null
             </table>
         </div>
 
-        <!-- ৩. রেডিমেড স্টোর আইটেম অর্ডার টেবিল -->
         <div style="background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 20px; margin-bottom: 40px;">
             <h3 style="color: #4a154b; margin: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">📦 Ready-to-Ship Store Orders</h3>
             
