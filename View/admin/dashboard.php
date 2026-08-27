@@ -223,7 +223,15 @@ while ($r = mysqli_fetch_assoc($riders)) {
         </tbody>
     </table>
 </div>
-
+<div style="margin: 30px 0 50px 0; display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 15px 20px; border-radius: 4px; border: 1px solid #d2d6dc;">
+    <div>
+        <span style="color: #666; font-size: 14px;">Logged in as: <strong>Admin</strong></span>
+    </div>
+    <div>
+        <a href="../../index.php" style="background-color: #e2e8f0; color: #333; padding: 10px 18px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; margin-right: 10px;">← View Shop</a>
+        <a href="../../Controller/AuthController.php?action=logout" style="background-color: #e53e3e; color: white; padding: 10px 22px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; display: inline-block;">Logout from Admin Panel</a>
+    </div>
+</div>
 <?php
 require_once __DIR__ . '/../layouts/footer.php';
 ?>

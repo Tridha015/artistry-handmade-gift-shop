@@ -1,100 +1,62 @@
 <?php
-session_start();
-require_once __DIR__ . '/../Model/ProductModel.php';
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Seller') {
-    header("Location: ../View/auth/login.php?error=Access Denied! Seller only.");
-    exit();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-if (isset($_POST['action']) && $_POST['action'] === 'add_product') {
-    $seller_id = $_SESSION['user_id'];
-    $title     = trim($_POST['title']);
-    $category  = trim($_POST['category']);
-    $price     = trim($_POST['price']);
-    $stock     = trim($_POST['stock']);
+require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../Model/ProductModel.php';
 
-    if (empty($title) || empty($category) || empty($price) || empty($stock)) {
-        header("Location: ../View/seller/add_product.php?error=All fields are required");
+// Handle Add Product
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_product') {
+    $seller_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 1;
+    $title     = trim($_POST['title'] ?? '');
+    $category  = trim($_POST['category'] ?? '');
+    $price     = floatval($_POST['price'] ?? 0);
+    $stock     = intval($_POST['stock'] ?? 1);
+
+    if (empty($title) || empty($category) || $price <= 0) {
+        header("Location: ../View/seller/add_product.php?error=Please fill all required fields correctly");
         exit();
     }
 
     $imageName = 'default_craft.jpg';
+
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $fileTmpPath   = $_FILES['image']['tmp_name'];
-        $fileName      = $_FILES['image']['name'];
-        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        $uploadDir = __DIR__ . '/../assets/images/uploads/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
 
-        $allowedExtensions = array('jpg', 'jpeg', 'png', 'webp');
-        if (in_array($fileExtension, $allowedExtensions)) {
-            $newFileName = time() . '_' . preg_replace("/[^a-zA-Z0-9.]/", "_", $fileName);
-            $uploadPath  = __DIR__ . '/../assets/images/uploads/' . $newFileName;
+        $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+        $allowed = array('jpg', 'jpeg', 'png', 'webp');
 
-            if (move_uploaded_file($fileTmpPath, $uploadPath)) {
-                $imageName = $newFileName;
-            }
-        } else {
-            header("Location: ../View/seller/add_product.php?error=Invalid file format. Upload JPG, PNG, or WEBP.");
-            exit();
+        if (in_array($ext, $allowed)) {
+            $imageName = time() . '_' . rand(1000, 9999) . '.' . $ext;
+            move_uploaded_file($_FILES['image']['tmp_name'], $uploadDir . $imageName);
         }
     }
 
     $isAdded = addProduct($seller_id, $title, $category, $price, $stock, $imageName);
 
     if ($isAdded) {
-        header("Location: ../View/seller/dashboard.php?success=Product added successfully!");
-    } else {
-        header("Location: ../View/seller/add_product.php?error=Failed to add product.");
-    }
-    exit();
-}
-
-if (isset($_POST['action']) && $_POST['action'] === 'edit_product') {
-    $seller_id  = $_SESSION['user_id'];
-    $product_id = intval($_POST['product_id']);
-    $title      = trim($_POST['title']);
-    $category   = trim($_POST['category']);
-    $price      = trim($_POST['price']);
-    $stock      = trim($_POST['stock']);
-
-    if (empty($title) || empty($category) || empty($price) || empty($stock)) {
-        header("Location: ../View/seller/edit_product.php?id=$product_id&error=All fields are required");
+        echo "<script>window.location.href = '../index.php?success=Craft uploaded successfully!#store-products';</script>";
+        echo "<noscript><meta http-equiv='refresh' content='0;url=../index.php?success=Craft uploaded successfully!#store-products'></noscript>";
         exit();
-    }
-
-    $imageName = null;
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $fileTmpPath   = $_FILES['image']['tmp_name'];
-        $fileName      = $_FILES['image']['name'];
-        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-
-        $allowedExtensions = array('jpg', 'jpeg', 'png', 'webp');
-        if (in_array($fileExtension, $allowedExtensions)) {
-            $newFileName = time() . '_' . preg_replace("/[^a-zA-Z0-9.]/", "_", $fileName);
-            $uploadPath  = __DIR__ . '/../assets/images/uploads/' . $newFileName;
-
-            if (move_uploaded_file($fileTmpPath, $uploadPath)) {
-                $imageName = $newFileName;
-            }
-        }
-    }
-
-    $isUpdated = updateProduct($product_id, $seller_id, $title, $category, $price, $stock, $imageName);
-
-    if ($isUpdated) {
-        header("Location: ../View/seller/dashboard.php?success=Product updated successfully!");
     } else {
-        header("Location: ../View/seller/edit_product.php?id=$product_id&error=Failed to update product.");
+        die("<div style='font-family:sans-serif; padding:20px; color:red;'><h3>Database Error:</h3>" . mysqli_error($conn) . "</div>");
     }
-    exit();
 }
 
+// Handle Delete Product
 if (isset($_GET['action']) && $_GET['action'] === 'delete') {
-    $seller_id  = $_SESSION['user_id'];
     $product_id = intval($_GET['id']);
-
+    $seller_id  = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
     deleteProduct($product_id, $seller_id);
-    header("Location: ../View/seller/dashboard.php?success=Product deleted successfully!");
+    header("Location: ../View/seller/dashboard.php?success=Product removed");
     exit();
 }
 ?>

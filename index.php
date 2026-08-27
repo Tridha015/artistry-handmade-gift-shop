@@ -7,7 +7,8 @@ session_start();
 $pageTitle = "Artistry of Tridha - Handmade Gift & Craft Shop";
 require_once __DIR__ . '/View/layouts/header.php';
 require_once __DIR__ . '/Model/ProductModel.php';
-$selectedCategory = $_GET['category'] ?? null;
+
+$selectedCategory = isset($_GET['category']) ? trim($_GET['category']) : null;
 if (!empty($selectedCategory)) {
     $allProducts = getProductsByCategory($selectedCategory);
 } else {
@@ -26,11 +27,18 @@ if (!empty($selectedCategory)) {
     </div>
 </div>
 
-<!-- Add to Cart Section -->
-<div style="max-width: 1200px; margin: 40px auto 20px auto; padding: 0 20px; font-family: sans-serif;">
+<!-- Add to Cart / Ready Products Section -->
+<div id="store-products" style="max-width: 1200px; margin: 40px auto 20px auto; padding: 0 20px; font-family: sans-serif;">
     <div class="section-title" style="margin-bottom: 25px;">
         <h2>Ready-to-Ship Handmade Crafts</h2>
-        <p>Browse newly crafted items available in stock and add them directly to your cart</p>
+        <p>
+            <?php if (!empty($selectedCategory)): ?>
+                Showing category: <strong style="color: #4a154b;"><?php echo htmlspecialchars($selectedCategory); ?></strong> 
+                — <a href="index.php#store-products" style="color: #c53030; text-decoration: underline; font-weight: bold; font-size: 13px;">(View All Items)</a>
+            <?php else: ?>
+                Browse newly crafted items available in stock and add them directly to your cart
+            <?php endif; ?>
+        </p>
     </div>
 
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 25px;">
@@ -72,8 +80,10 @@ if (!empty($selectedCategory)) {
                 </div>
             <?php endwhile; ?>
         <?php else: ?>
-            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; border: 1px dashed #ccc; border-radius: 6px; color: #888;">
-                <h3>No crafts listed in store right now. Check back soon!</h3>
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; border: 1px dashed #ccc; border-radius: 6px; color: #888; background: #fff;">
+                <h3>No crafts listed in this category yet.</h3>
+                <p style="margin-top: 8px;">Check other albums or request a custom order.</p>
+                <a href="index.php#store-products" style="display: inline-block; margin-top: 10px; color: #4a154b; font-weight: bold;">View All Crafts</a>
             </div>
         <?php endif; ?>
     </div>
@@ -82,7 +92,7 @@ if (!empty($selectedCategory)) {
 <!-- Craft Albums Section -->
 <div id="albums" class="section-title" style="margin-top: 50px;">
     <h2>Featured Craft Albums</h2>
-    <p>Select a category to browse ready items or order custom handmade creations</p>
+    <p>Select a category to view items in stock</p>
 </div>
 
 <div class="album-grid">
@@ -102,7 +112,7 @@ if (!empty($selectedCategory)) {
         <h3>Explosion Boxes</h3>
         <p>Multi-layered surprise gift boxes packed with photo pockets and pop-ups.</p>
         <div class="album-price">Starts from 500 BDT</div>
-        <a href="index.php?category=explosion_box#store-products" class="btn-card">View Items</a>
+        <a href="index.php?category=Explosion Box#store-products" class="btn-card">View Items</a>
     </div>
 
     <!-- Album 3 -->
@@ -111,7 +121,7 @@ if (!empty($selectedCategory)) {
         <h3>Greeting Cards</h3>
         <p>Intricate handmade 3D pop-up cards for birthdays, anniversaries & other special occasions.</p>
         <div class="album-price">Starts from 250 BDT</div>
-        <a href="index.php?category=popup_card#store-products" class="btn-card">View Items</a>
+        <a href="index.php?category=Greeting Cards#store-products" class="btn-card">View Items</a>
     </div>
 
     <!-- Album 4 -->
@@ -120,7 +130,7 @@ if (!empty($selectedCategory)) {
         <h3>Nikah & Signature Pens</h3>
         <p>Custom feather and gold-accented pens for weddings and milestones.</p>
         <div class="album-price">Starts from 450 BDT</div>
-        <a href="index.php?category=nikah_pen#store-products" class="btn-card">View Items</a>
+        <a href="index.php?category=Nikah & Signature Pens#store-products" class="btn-card">View Items</a>
     </div>
 
     <!-- Album 5 -->
@@ -129,7 +139,7 @@ if (!empty($selectedCategory)) {
         <h3>Handmade Floral Bouquets</h3>
         <p>Everlasting craft paper, ribbon, and fabric flower arrangements.</p>
         <div class="album-price">Starts from 650 BDT</div>
-        <a href="index.php?category=bouquet#store-products" class="btn-card">View Items</a>
+        <a href="index.php?category=Floral Bouquets#store-products" class="btn-card">View Items</a>
     </div>
 
     <!-- Album 6 -->
@@ -138,7 +148,7 @@ if (!empty($selectedCategory)) {
         <h3>Photo Frames</h3>
         <p>Customized wall and desk frames with pictures, handmade lettering and motifs.</p>
         <div class="album-price">Starts from 300 BDT</div>
-        <a href="index.php?category=frame#store-products" class="btn-card">View Items</a>
+        <a href="index.php?category=Photo Frames#store-products" class="btn-card">View Items</a>
     </div>
 
     <!-- Album 7 -->
@@ -147,7 +157,7 @@ if (!empty($selectedCategory)) {
         <h3>Chocolate Gift Hampers</h3>
         <p>Curated gift sets featuring craft organizers, treats, and message cards.</p>
         <div class="album-price">Starts from 1,100 BDT</div>
-        <a href="index.php?category=hamper#store-products" class="btn-card">View Items</a>
+        <a href="index.php?category=Chocolate Gift Hampers#store-products" class="btn-card">View Items</a>
     </div>
 
     <!-- Album 8 -->
@@ -156,7 +166,7 @@ if (!empty($selectedCategory)) {
         <h3>Shadow Boxes & Light Jars</h3>
         <p>Illuminated layered paper silhouettes and decorative craft jars.</p>
         <div class="album-price">Starts from 1,350 BDT</div>
-        <a href="index.php?category=shadow_box#store-products" class="btn-card">View Items</a>
+        <a href="index.php?category=Shadow Boxes & Light Jars#store-products" class="btn-card">View Items</a>
     </div>
 
     <!-- Album 9 -->
@@ -165,7 +175,7 @@ if (!empty($selectedCategory)) {
         <h3>Custom Illustration Art</h3>
         <p>Personalized portrait sketches and stylized handmade art pieces.</p>
         <div class="album-price">Starts from 900 BDT</div>
-        <a href="index.php?category=illustration#store-products" class="btn-card">View Items</a>
+        <a href="index.php?category=Custom Illustration Art#store-products" class="btn-card">View Items</a>
     </div>
 
 </div>

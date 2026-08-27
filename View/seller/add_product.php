@@ -23,18 +23,22 @@ require_once __DIR__ . '/../layouts/header.php';
 
         <div style="margin-bottom: 15px;">
             <label>Product Title</label><br>
-            <input type="text" name="title" required placeholder="e.g. Explosion Box, Floral Scrapbook" style="width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box;">
+            <input type="text" name="title" required placeholder="ex: Explosion Box, Floral Scrapbook" style="width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box;">
         </div>
 
         <div style="margin-bottom: 15px;">
             <label>Category</label><br>
             <select name="category" required style="width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box;">
-                <option value="Explosion Box">Explosion Box</option>
-                <option value="Scrapbook">Scrapbook</option>
-                <option value="Bouquet">Floral Bouquet</option>
-                <option value="Gift Box">Handmade Gift Box</option>
-                <option value="Wall Art">Wall Decor & Art</option>
-            </select>
+    <option value="Scrapbook">Memory Scrapbooks</option>
+    <option value="Explosion Box">Explosion Boxes</option>
+    <option value="Greeting Cards">Greeting Cards</option>
+    <option value="Nikah & Signature Pens">Nikah & Signature Pens</option>
+    <option value="Floral Bouquets">Handmade Floral Bouquets</option>
+    <option value="Photo Frames">Photo Frames</option>
+    <option value="Chocolate Gift Hampers">Chocolate Gift Hampers</option>
+    <option value="Shadow Boxes & Light Jars">Shadow Boxes & Light Jars</option>
+    <option value="Custom Illustration Art">Custom Illustration Art</option>
+</select>
         </div>
 
         <div style="display: flex; gap: 15px; margin-bottom: 15px;">

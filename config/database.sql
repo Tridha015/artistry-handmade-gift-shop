@@ -1,7 +1,6 @@
 CREATE DATABASE IF NOT EXISTS `artistry_db`;
 USE `artistry_db`;
-
--- ১. ইউজার টেবিল
+--user
 CREATE TABLE IF NOT EXISTS `users` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(100) NOT NULL,
@@ -13,7 +12,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ২. ক্রাফট প্রোডাক্ট টেবিল
+-- product
 CREATE TABLE IF NOT EXISTS `products` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `seller_id` INT NOT NULL,
@@ -26,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `products` (
   FOREIGN KEY (`seller_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
 
--- ৩. কাস্টম ক্রাফট রিকোয়েস্ট টেবিল
+-- custom craft request
 CREATE TABLE IF NOT EXISTS `custom_orders` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `customer_id` INT NOT NULL,
@@ -42,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `custom_orders` (
   FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
 
--- ৪. রেডিমেড স্টোর অর্ডার টেবিল
+-- available product
 CREATE TABLE IF NOT EXISTS `orders` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `customer_id` INT NOT NULL,
@@ -59,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
   FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE CASCADE
 );
 
--- ৫. ডেলিভারি টেবিল
+-- delivary
 CREATE TABLE IF NOT EXISTS `deliveries` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `order_id` INT NOT NULL UNIQUE,
@@ -71,7 +70,7 @@ CREATE TABLE IF NOT EXISTS `deliveries` (
   FOREIGN KEY (`rider_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
 
--- ডিফল্ট ইউজার ডেটা (পাসওয়ার্ড: 123456)
+-- default user
 INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `role`, `status`) VALUES
 (1, 'Super Admin', 'admin@artistry.com', '01700000000', '$2y$10$wE9l1i76c1iVl8pD0b/Y1uH2Gg8F7HkQn2sW5m0hO1pX0a2L1kKqG', 'Admin', 'Active'),
 (2, 'Rafiq Craft Artisan', 'rafiq@gmail.com', '01822998877', '$2y$10$wE9l1i76c1iVl8pD0b/Y1uH2Gg8F7HkQn2sW5m0hO1pX0a2L1kKqG', 'Seller', 'Active'),
