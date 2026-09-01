@@ -5,7 +5,7 @@ function getAssignedParcels($riderId) {
     global $conn;
     $riderId = intval($riderId);
     $sql = "SELECT d.id AS delivery_id, d.order_id, d.delivery_address, d.delivery_status,
-                   u.name AS customer_name, u.phone AS customer_phone, p.title AS product_name, o.total_price
+            u.name AS customer_name, u.phone AS customer_phone, p.title AS product_name, o.total_price
             FROM deliveries d
             LEFT JOIN orders o ON d.order_id = o.id
             LEFT JOIN users u ON o.customer_id = u.id
@@ -20,7 +20,7 @@ function getCompletedDeliveries($riderId) {
     global $conn;
     $riderId = intval($riderId);
     $sql = "SELECT d.id AS delivery_id, d.order_id, d.delivery_address, d.delivery_status,
-                   u.name AS customer_name, p.title AS product_name, o.total_price
+            u.name AS customer_name, p.title AS product_name, o.total_price
             FROM deliveries d
             LEFT JOIN orders o ON d.order_id = o.id
             LEFT JOIN users u ON o.customer_id = u.id

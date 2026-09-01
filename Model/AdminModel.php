@@ -36,7 +36,7 @@ function getAllCustomOrders() {
 function getAllStoreOrders() {
     global $conn;
     $sql = "SELECT o.*, p.title AS product_name, u.name AS customer_name, u.phone AS customer_phone,
-                   d.id AS delivery_id, d.rider_id, d.delivery_status 
+d.id AS delivery_id, d.rider_id, d.delivery_status 
             FROM orders o
             JOIN products p ON o.product_id = p.id
             JOIN users u ON o.customer_id = u.id

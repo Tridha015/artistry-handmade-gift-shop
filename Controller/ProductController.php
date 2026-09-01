@@ -59,4 +59,30 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete') {
     header("Location: ../View/seller/dashboard.php?success=Product removed");
     exit();
 }
+
+// AJAX Inline Stock & Price Update for Seller
+if (isset($_POST['action']) && $_POST['action'] === 'ajax_update_stock_price') {
+    header('Content-Type: application/json');
+    
+    if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Seller') {
+        echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+        exit();
+    }
+
+    $productId = intval($_POST['product_id'] ?? 0);
+    $stock     = intval($_POST['stock'] ?? 0);
+    $price     = floatval($_POST['price'] ?? 0);
+    $sellerId  = intval($_SESSION['user_id']);
+
+    if ($productId > 0 && $price > 0) {
+        $sql = "UPDATE products SET stock = $stock, price = $price WHERE id = $productId AND seller_id = $sellerId";
+        if (mysqli_query($conn, $sql)) {
+            echo json_encode(['status' => 'success', 'message' => 'Stock & Price updated successfully!']);
+            exit();
+        }
+    }
+
+    echo json_encode(['status' => 'error', 'message' => 'Update failed!']);
+    exit();
+}
 ?>

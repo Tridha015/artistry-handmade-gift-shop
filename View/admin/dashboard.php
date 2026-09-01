@@ -188,7 +188,7 @@ while ($r = mysqli_fetch_assoc($riders)) {
                 <th>Phone</th>
                 <th>Role</th>
                 <th>Status</th>
-                <th>Approval Action</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -201,17 +201,18 @@ while ($r = mysqli_fetch_assoc($riders)) {
                         <td><?php echo htmlspecialchars($u['phone']); ?></td>
                         <td><b><?php echo htmlspecialchars($u['role']); ?></b></td>
                         <td>
-                            <span class="badge <?php echo ($u['status'] === 'Active') ? 'badge-ready' : (($u['status'] === 'Pending') ? 'badge-pending' : 'badge-danger'); ?>">
+                            <span id="user-badge-<?php echo $u['id']; ?>" class="badge <?php echo ($u['status'] === 'Active') ? 'badge-ready' : (($u['status'] === 'Pending') ? 'badge-pending' : 'badge-danger'); ?>">
                                 <?php echo htmlspecialchars($u['status']); ?>
                             </span>
                         </td>
                         <td>
-                            <?php if ($u['status'] === 'Pending' || $u['status'] === 'Suspended'): ?>
-                                <a href="../../Controller/AdminController.php?action=approve_user&user_id=<?php echo $u['id']; ?>" style="color: green; font-weight: bold; text-decoration: none; margin-right: 8px;">Approve</a>
-                            <?php endif; ?>
-                            <?php if ($u['status'] === 'Active'): ?>
-                                <a href="../../Controller/AdminController.php?action=suspend_user&user_id=<?php echo $u['id']; ?>" style="color: red; font-weight: bold; text-decoration: none;">Suspend</a>
-                            <?php endif; ?>
+                            <?php $targetStatus = ($u['status'] === 'Active') ? 'Suspended' : 'Active'; ?>
+                            <button type="button" 
+                                    id="btn-user-<?php echo $u['id']; ?>" 
+                                    onclick="toggleUserStatus(<?php echo $u['id']; ?>, '<?php echo $targetStatus; ?>')" 
+                                    style="background: <?php echo ($u['status'] === 'Active') ? '#e53e3e' : '#28a745'; ?>; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s;">
+                                ⚡ <?php echo ($u['status'] === 'Active') ? 'Suspend' : 'Approve'; ?>
+                            </button>
                         </td>
                     </tr>
                 <?php endwhile; ?>
@@ -223,6 +224,7 @@ while ($r = mysqli_fetch_assoc($riders)) {
         </tbody>
     </table>
 </div>
+
 <div style="margin: 30px 0 50px 0; display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 15px 20px; border-radius: 4px; border: 1px solid #d2d6dc;">
     <div>
         <span style="color: #666; font-size: 14px;">Logged in as: <strong>Admin</strong></span>
@@ -232,6 +234,51 @@ while ($r = mysqli_fetch_assoc($riders)) {
         <a href="../../Controller/AuthController.php?action=logout" style="background-color: #e53e3e; color: white; padding: 10px 22px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; display: inline-block;">Logout from Admin Panel</a>
     </div>
 </div>
+
+<script>
+function toggleUserStatus(userId, targetStatus) {
+    const btn = document.getElementById('btn-user-' + userId);
+    const badge = document.getElementById('user-badge-' + userId);
+    const originalText = btn.innerText;
+
+    btn.innerText = 'Updating... ⏳';
+    btn.disabled = true;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '../../Controller/AdminController.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+    xhr.onload = function() {
+        btn.disabled = false;
+        if (xhr.status === 200) {
+            try {
+                const res = JSON.parse(xhr.responseText);
+                if (res.status === 'success') {
+                    badge.innerText = res.new_status;
+                    badge.className = 'badge ' + (res.new_status === 'Active' ? 'badge-ready' : 'badge-danger');
+
+                    const nextStatus = (res.new_status === 'Active') ? 'Suspended' : 'Active';
+                    btn.innerText = '⚡ ' + (res.new_status === 'Active' ? 'Suspend' : 'Approve');
+                    btn.style.backgroundColor = (res.new_status === 'Active') ? '#e53e3e' : '#28a745';
+                    btn.setAttribute('onclick', `toggleUserStatus(${userId}, '${nextStatus}')`);
+                } else {
+                    alert('Error: ' + res.message);
+                    btn.innerText = originalText;
+                }
+            } catch(e) {
+                console.error('JSON parse error', e);
+                btn.innerText = originalText;
+            }
+        } else {
+            alert('Server error occurred.');
+            btn.innerText = originalText;
+        }
+    };
+
+    xhr.send('action=ajax_toggle_user_status&user_id=' + encodeURIComponent(userId) + '&new_status=' + encodeURIComponent(targetStatus));
+}
+</script>
+
 <?php
 require_once __DIR__ . '/../layouts/footer.php';
 ?>

@@ -1,7 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 session_start();
 require_once __DIR__ . '/../../Model/ProductModel.php';
 
@@ -13,82 +10,71 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Seller') {
 $pageTitle = "Seller Dashboard - Artistry";
 require_once __DIR__ . '/../layouts/header.php';
 
-$seller_id = $_SESSION['user_id'] ?? 0;
-$products  = getProductsBySeller($seller_id);
+$sellerId = intval($_SESSION['user_id']);
+$products = getProductsBySeller($sellerId);
 ?>
 
 <div style="max-width: 1100px; margin: 30px auto 60px auto; font-family: sans-serif; padding: 0 20px;">
     
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #edf2f7; padding-bottom: 15px;">
+    <!-- Floating Toast Notification -->
+    <div id="seller-toast" style="display: none; position: fixed; top: 20px; right: 20px; z-index: 9999; color: white; padding: 12px 20px; border-radius: 4px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.15);"></div>
+
+    <!-- Header Section -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
         <div>
-            <h2 style="color: #4a154b; margin: 0 0 5px 0;">Artisan Dashboard</h2>
-            <p style="margin: 0; color: #666;">Welcome back, <strong><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Artisan'); ?></strong></p>
+            <h2 style="color: #4a154b; margin: 0 0 5px 0;">🎨 My Craft Inventory</h2>
+            <p style="margin: 0; color: #666;">Welcome, <strong><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Artisan'); ?></strong></p>
         </div>
-        <a href="add_product.php" style="background-color: #4a154b; color: white; padding: 10px 18px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px;">+ Add New Craft</a>
+        <a href="add_product.php" style="background: #4a154b; color: white; padding: 10px 18px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px;">+ Add New Craft</a>
     </div>
 
-    <?php if (isset($_GET['success'])): ?>
-        <div style="background-color: #d4edda; color: #155724; padding: 12px; border-radius: 4px; margin-bottom: 20px;">
-            <?php echo htmlspecialchars($_GET['success']); ?>
-        </div>
-    <?php endif; ?>
-
-    <?php if (isset($_GET['error'])): ?>
-        <div style="background-color: #f8d7da; color: #721c24; padding: 12px; border-radius: 4px; margin-bottom: 20px;">
-            <?php echo htmlspecialchars($_GET['error']); ?>
-        </div>
-    <?php endif; ?>
-
-    <div style="background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-        <h3 style="margin-top: 0; color: #2d3748; border-bottom: 1px solid #eee; padding-bottom: 10px;">📦 My Craft Inventory</h3>
-        
-        <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: left; margin-top: 15px;">
+    <!-- Product Table Panel -->
+    <div style="background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 30px;">
+        <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
                 <tr style="background-color: #572553; color: white;">
-                    <th>Preview</th>
-                    <th>Title</th>
+                    <th style="width: 70px;">Preview</th>
+                    <th>Product Title</th>
                     <th>Category</th>
-                    <th>Price</th>
-                    <th>Stock</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th style="width: 130px;">Price (BDT)</th>
+                    <th style="width: 100px;">Stock Units</th>
+                    <th style="width: 110px; text-align: center;">Action</th>
+                    <th style="width: 120px; text-align: center;">Manage</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if ($products && mysqli_num_rows($products) > 0): ?>
                     <?php while ($p = mysqli_fetch_assoc($products)): ?>
-                        <tr>
-                            <td style="width: 70px;">
-                                <img src="../../assets/images/uploads/<?php echo htmlspecialchars($p['image']); ?>" alt="Craft" style="width: 55px; height: 55px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" onerror="this.src='../../assets/images/sample1.jpg';">
+                        <tr id="row-<?php echo $p['id']; ?>">
+                            <td>
+                                <img src="../../assets/images/uploads/<?php echo htmlspecialchars($p['image']); ?>" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" onerror="this.src='../../assets/images/sample1.jpg';">
                             </td>
                             <td><strong><?php echo htmlspecialchars($p['title']); ?></strong></td>
                             <td><?php echo htmlspecialchars($p['category']); ?></td>
-                            <td>৳ <?php echo number_format($p['price'], 2); ?></td>
-                            <td><?php echo $p['stock']; ?> pcs</td>
                             <td>
-                                <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; color: white; background-color: <?php echo ($p['stock'] > 0) ? '#28a745' : '#dc3545'; ?>;">
-                                    <?php echo ($p['stock'] > 0) ? 'Available' : 'Out of Stock'; ?>
-                                </span>
+                                <input type="number" step="0.01" id="price-<?php echo $p['id']; ?>" value="<?php echo $p['price']; ?>" style="width: 100px; padding: 6px; border: 1px solid #ccc; border-radius: 4px;">
                             </td>
                             <td>
-                                <a href="edit_product.php?id=<?php echo $p['id']; ?>" style="color: #2b6cb0; text-decoration: none; font-weight: bold; margin-right: 15px;">Edit</a>
-                                <a href="../../Controller/ProductController.php?action=delete&id=<?php echo $p['id']; ?>" onclick="return confirm('Are you sure you want to delete this craft item?');" style="color: #dc3545; text-decoration: none; font-weight: bold;">Delete</a>
+                                <input type="number" id="stock-<?php echo $p['id']; ?>" value="<?php echo $p['stock']; ?>" style="width: 70px; padding: 6px; border: 1px solid #ccc; border-radius: 4px;">
+                            </td>
+                            <td style="text-align: center;">
+                                <button id="btn-save-<?php echo $p['id']; ?>" onclick="updateStockPrice(<?php echo $p['id']; ?>)" style="background: #28a745; color: white; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;">⚡ Save</button>
+                            </td>
+                            <td style="text-align: center;">
+                                <a href="edit_product.php?id=<?php echo $p['id']; ?>" style="color: #007bff; text-decoration: none; font-weight: bold; margin-right: 12px;">Edit</a>
+                                <a href="../../Controller/ProductController.php?action=delete&id=<?php echo $p['id']; ?>" onclick="return confirm('Are you sure you want to delete this craft?');" style="color: #e53e3e; text-decoration: none; font-weight: bold;">Delete</a>
                             </td>
                         </tr>
                     <?php endwhile; ?>
                 <?php else: ?>
-                    <tr>
-                        <td colspan="7" style="text-align: center; color: #718096; padding: 35px 20px;">
-                            No craft products listed yet.<br><br>
-                            <a href="add_product.php" style="background-color: #4a154b; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-size: 13px; font-weight: bold;">+ Add Your First Craft Item</a>
-                        </td>
-                    </tr>
+                    <tr><td colspan="7" style="text-align: center; color: #777; padding: 30px;">No products uploaded yet.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
     </div>
 
-    <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 15px 20px; border-radius: 4px; border: 1px solid #d2d6dc;">
+    <!-- Bottom Profile & Logout Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 15px 20px; border-radius: 4px; border: 1px solid #d2d6dc;">
         <div>
             <span style="color: #666; font-size: 14px;">Logged in as Artisan: <strong><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Seller'); ?></strong></span>
         </div>
@@ -100,6 +86,39 @@ $products  = getProductsBySeller($seller_id);
 
 </div>
 
-<?php
-require_once __DIR__ . '/../layouts/footer.php';
-?>
+<!-- AJAX JavaScript Logic -->
+<script>
+function updateStockPrice(productId) {
+    const priceVal = document.getElementById('price-' + productId).value;
+    const stockVal = document.getElementById('stock-' + productId).value;
+    const saveBtn  = document.getElementById('btn-save-' + productId);
+    const toast    = document.getElementById('seller-toast');
+    const origText = saveBtn.innerText;
+
+    saveBtn.innerText = 'Saving... ⏳';
+    saveBtn.disabled = true;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '../../Controller/ProductController.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+    xhr.onload = function() {
+        saveBtn.disabled = false;
+        saveBtn.innerText = origText;
+        if (xhr.status === 200) {
+            try {
+                const res = JSON.parse(xhr.responseText);
+                toast.innerText = res.message;
+                toast.style.backgroundColor = (res.status === 'success') ? '#28a745' : '#dc3545';
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 3000);
+            } catch(e) {
+                console.error('JSON parse error', e);
+            }
+        }
+    };
+    xhr.send('action=ajax_update_stock_price&product_id=' + encodeURIComponent(productId) + '&price=' + encodeURIComponent(priceVal) + '&stock=' + encodeURIComponent(stockVal));
+}
+</script>
+
+<?php require_once __DIR__ . '/../layouts/footer.php'; ?>
