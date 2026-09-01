@@ -86,3 +86,27 @@ if (isset($_POST['action']) && $_POST['action'] === 'ajax_update_stock_price') {
     exit();
 }
 ?>
+
+// Live Product Search AJAX Handler
+if (isset($_GET['action']) && $_GET['action'] === 'live_search') {
+    header('Content-Type: application/json');
+    $query = trim($_GET['q'] ?? '');
+ 
+    if (strlen($query) > 0) {
+        $result = searchProductsLive($query);
+        $products = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $products[] = [
+                'id'       => $row['id'],
+                'title'    => $row['title'],
+                'price'    => number_format($row['price'], 2),
+                'image'    => $row['image'],
+                'category' => $row['category']
+            ];
+        }
+        echo json_encode(['status' => 'success', 'data' => $products]);
+    } else {
+        echo json_encode(['status' => 'success', 'data' => []]);
+    }
+    exit();
+}
