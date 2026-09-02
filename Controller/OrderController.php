@@ -1,9 +1,5 @@
 <?php
 ob_start();
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -18,34 +14,58 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Customer') {
     exit();
 }
 
-if (isset($_GET['action']) && $_GET['action'] === 'customer_confirm_custom' && isset($_GET['order_id'])) {
+if (isset($_GET['action']) && $_GET['action'] === 'customer_reject_custom' && isset($_GET['order_id'])) {
     $orderId = intval($_GET['order_id']);
     $customerId = intval($_SESSION['user_id'] ?? 0);
 
     if ($orderId > 0 && $customerId > 0) {
-        $check = mysqli_query($conn, "SELECT id, craft_type, budget, sample_image, status FROM custom_orders WHERE id = $orderId AND customer_id = $customerId LIMIT 1");
+        mysqli_query($conn, "UPDATE custom_orders SET status = 'Rejected' WHERE id = $orderId AND customer_id = $customerId");
         
-        if ($check && mysqli_num_rows($check) > 0) {
-            $row = mysqli_fetch_assoc($check);
-
-            if (!isset($_SESSION['cart']) || !is_array($_SESSION['cart'])) {
-                $_SESSION['cart'] = array();
-            }
-
-            $cartKey = 'custom_' . $orderId;
-            $_SESSION['cart'][$cartKey] = [
-                'id'       => 0,
-                'title'    => 'Custom: ' . $row['craft_type'] . ' (#CR-' . $orderId . ')',
-                'price'    => floatval($row['budget']),
-                'quantity' => 1,
-                'image'    => !empty($row['sample_image']) ? $row['sample_image'] : 'sample1.jpg'
-            ];
-
-            header("Location: ../View/customer/cart.php?success=Custom craft added to your cart! Please proceed to checkout.");
-            exit();
+        $cartKey = 'custom_' . $orderId;
+        if (isset($_SESSION['cart'][$cartKey])) {
+            unset($_SESSION['cart'][$cartKey]);
         }
+
+        header("Location: ../View/customer/cart.php?success=Quotation declined and request cancelled.");
+        exit();
     }
-    header("Location: ../View/customer/cart.php?error=Unable to process custom order");
+    header("Location: ../View/customer/cart.php?error=Action failed");
+    exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'place_custom_payment') {
+    $customerId      = intval($_SESSION['user_id']);
+    $customOrderId   = intval($_POST['custom_order_id'] ?? 0);
+    $deliveryAddress = mysqli_real_escape_string($conn, trim($_POST['delivery_address']));
+    $paymentGateway  = mysqli_real_escape_string($conn, trim($_POST['payment_gateway']));
+    $senderNumber    = mysqli_real_escape_string($conn, trim($_POST['sender_number']));
+    $trxId           = mysqli_real_escape_string($conn, trim($_POST['trx_id']));
+
+    if ($customOrderId > 0 && !empty($deliveryAddress) && !empty($senderNumber) && !empty($trxId)) {
+        $check = mysqli_query($conn, "SELECT budget, craft_type FROM custom_orders WHERE id = $customOrderId AND customer_id = $customerId LIMIT 1");
+        $co = mysqli_fetch_assoc($check);
+        $totalPrice = floatval($co['budget'] ?? 0);
+
+        $anyProd = mysqli_query($conn, "SELECT id FROM products LIMIT 1");
+        $anyRow = mysqli_fetch_assoc($anyProd);
+        $prodId = intval($anyRow['id'] ?? 1);
+
+        $customTrx = "CUSTOM-" . $customOrderId . "-" . $trxId;
+
+        $sql = "INSERT INTO orders (customer_id, product_id, quantity, total_price, payment_gateway, sender_number, trx_id, delivery_address, status) 
+                VALUES ($customerId, $prodId, 1, $totalPrice, '$paymentGateway', '$senderNumber', '$customTrx', '$deliveryAddress', 'Payment pending')";
+        mysqli_query($conn, $sql);
+
+        $cartKey = 'custom_' . $customOrderId;
+        if (isset($_SESSION['cart'][$cartKey])) {
+            unset($_SESSION['cart'][$cartKey]);
+        }
+
+        header("Location: ../View/customer/cart.php?success=Payment submitted! Verification in progress.");
+        exit();
+    }
+
+    header("Location: ../View/customer/custom_checkout.php?order_id=$customOrderId&error=Please fill all fields");
     exit();
 }
 

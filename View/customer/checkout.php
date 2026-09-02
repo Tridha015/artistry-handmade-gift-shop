@@ -40,7 +40,7 @@ require_once __DIR__ . '/../layouts/header.php';
         <div style="margin-bottom: 15px;">
 <label><strong>Payment Gateway</strong></label><br>
 <select name="payment_gateway" required style="width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box;">
-<option value="bKash">bKash (Send Money / Payment)</option>
+<option value="bKash">bKash (Send Money)</option>
 <option value="Nagad">Nagad</option>
 <option value="Rocket">Rocket</option>
 </select>

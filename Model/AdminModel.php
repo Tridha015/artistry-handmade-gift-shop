@@ -4,9 +4,21 @@ require_once __DIR__ . '/../config/db.php';
 function getAdminStats(): array {
     global $conn;
     
+    // Total sell
     $revRes = mysqli_query($conn, "SELECT SUM(total_price) AS total FROM orders WHERE status = 'Confirmed'");
     $revRow = mysqli_fetch_assoc($revRes);
-    $revenue = $revRow['total'] ?? 0;
+    $grossRevenue = floatval($revRow['total'] ?? 0);
+
+    // total successful deliveries
+    $delCountRes = mysqli_query($conn, "SELECT COUNT(*) AS total FROM deliveries WHERE delivery_status = 'Delivered'");
+    $delCountRow = mysqli_fetch_assoc($delCountRes);
+    $totalDelivered = intval($delCountRow['total'] ?? 0);
+
+    // rider payout total (per delivery 80)
+    $riderPayoutTotal = $totalDelivered * 80;
+
+    // net revenue
+    $netRevenue = max(0, $grossRevenue - $riderPayoutTotal);
 
     $cpRes = mysqli_query($conn, "SELECT COUNT(*) AS total FROM custom_orders WHERE status = 'Pending Review'");
     $cpRow = mysqli_fetch_assoc($cpRes);
@@ -21,7 +33,7 @@ function getAdminStats(): array {
     $riders = $ridRow['total'] ?? 0;
 
     return [
-        'revenue'        => $revenue,
+        'revenue'        => $netRevenue,
         'custom_pending' => $customPending,
         'sellers'        => $sellers,
         'riders'         => $riders
@@ -30,21 +42,29 @@ function getAdminStats(): array {
 
 function getAllCustomOrders() {
     global $conn;
-    $sql = "SELECT co.*, u.name AS customer_name, u.phone AS customer_phone 
+    $sql = "SELECT co.*, u.name AS customer_name, u.phone AS customer_phone,
+                   o.id AS linked_order_id, o.payment_gateway, o.sender_number, o.trx_id, 
+                   o.delivery_address, o.status AS payment_status,
+                   d.rider_id, d.delivery_status, r.name AS rider_name
             FROM custom_orders co 
             JOIN users u ON co.customer_id = u.id 
+            LEFT JOIN orders o ON (o.customer_id = co.customer_id AND o.trx_id LIKE CONCAT('CUSTOM-', co.id, '-%'))
+            LEFT JOIN deliveries d ON o.id = d.order_id
+            LEFT JOIN users r ON d.rider_id = r.id
             ORDER BY co.id DESC";
     return mysqli_query($conn, $sql);
 }
 
 function getAllStoreOrders() {
     global $conn;
-    $sql = "SELECT o.*, u.name AS customer_name, u.phone AS customer_phone, p.title AS product_name, d.rider_id, d.delivery_status, r.name AS rider_name 
+    $sql = "SELECT o.*, u.name AS customer_name, u.phone AS customer_phone, p.title AS product_name, 
+                   d.rider_id, d.delivery_status, r.name AS rider_name 
             FROM orders o 
             JOIN users u ON o.customer_id = u.id 
             JOIN products p ON o.product_id = p.id 
             LEFT JOIN deliveries d ON o.id = d.order_id 
             LEFT JOIN users r ON d.rider_id = r.id 
+            WHERE (o.trx_id NOT LIKE 'CUSTOM-%' OR o.trx_id IS NULL)
             ORDER BY o.id DESC";
     return mysqli_query($conn, $sql);
 }
@@ -57,10 +77,9 @@ function getAllRegistrations() {
 
 function getActiveRiders() {
     global $conn;
-    $sql = "SELECT id, name, phone FROM users WHERE role = 'Delivery' AND status = 'Active' ORDER BY name ASC";
+    $sql = "SELECT id, name, phone FROM users WHERE role = 'Delivery' AND status = 'Active' AND is_online = 1 ORDER BY name ASC";
     return mysqli_query($conn, $sql);
 }
-
 function setCustomOrderAdminPrice(int $orderId, float $finalPrice) {
     global $conn;
     $orderId    = intval($orderId);

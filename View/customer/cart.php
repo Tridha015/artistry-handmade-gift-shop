@@ -3,6 +3,7 @@ session_start();
 $pageTitle = "Cart & Order History - Artistry";
 require_once __DIR__ . '/../layouts/header.php';
 require_once __DIR__ . '/../../Model/OrderModel.php';
+require_once __DIR__ . '/../../config/db.php';
 
 $cartItems = $_SESSION['cart'] ?? array();
 $grandTotal = 0;
@@ -55,7 +56,7 @@ $storeOrders  = ($customerId > 0) ? getOrdersByCustomer($customerId) : null;
                         <td><?php echo $item['quantity']; ?></td>
                         <td>৳ <?php echo number_format($subtotal, 2); ?></td>
                         <td>
-                            <a href="../../Controller/CartController.php?action=remove&id=<?php echo $id; ?>" style="color: red; text-decoration: none; font-weight: bold;">Remove</a>
+                            <a href="../../Controller/CartController.php?action=remove&id=<?php echo urlencode($id); ?>" style="color: red; text-decoration: none; font-weight: bold;">Remove</a>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -68,7 +69,10 @@ $storeOrders  = ($customerId > 0) ? getOrdersByCustomer($customerId) : null;
 
             <div style="display: flex; justify-content: space-between; margin-top: 20px;">
                 <a href="../../index.php" style="background: #6c757d; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px;">Continue Shopping</a>
-                <a href="checkout.php" style="background-color: rgb(87, 37, 83); color: white; padding: 10px 25px; text-decoration: none; border-radius: 4px; font-weight: bold;">Proceed to Checkout →</a>
+                <div>
+                    <a href="../../Controller/CartController.php?action=clear" style="color: #e53e3e; text-decoration: none; font-size: 14px; font-weight: bold; margin-right: 15px;">Clear Cart</a>
+                    <a href="checkout.php" style="background-color: rgb(87, 37, 83); color: white; padding: 10px 25px; text-decoration: none; border-radius: 4px; font-weight: bold;">Proceed to Checkout →</a>
+                </div>
             </div>
         <?php else: ?>
             <p style="color: #666; margin: 15px 0 5px 0;">Your active shopping cart is currently empty.</p>
@@ -89,14 +93,20 @@ $storeOrders  = ($customerId > 0) ? getOrdersByCustomer($customerId) : null;
                         <th>Req ID</th>
                         <th>Craft Item & Theme</th>
                         <th>Size / Layers</th>
-                        <th>Offered Budget</th>
+                        <th>Quoted Price</th>
                         <th>Status</th>
-                        <th>Action</th>
+                        <th>Action / Progress</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if ($customOrders && mysqli_num_rows($customOrders) > 0): ?>
                         <?php while ($co = mysqli_fetch_assoc($customOrders)): ?>
+                            <?php 
+                                $hasPaid = !empty($co['linked_order_id']);
+                                $payStatus = strtolower($co['payment_status'] ?? '');
+                                $delStatus = $co['delivery_status'] ?? '';
+                                $rName = !empty($co['rider_name']) ? htmlspecialchars($co['rider_name']) : 'Rider';
+                            ?>
                             <tr>
                                 <td>#CR-<?php echo $co['id']; ?></td>
                                 <td>
@@ -106,26 +116,57 @@ $storeOrders  = ($customerId > 0) ? getOrdersByCustomer($customerId) : null;
                                 <td><?php echo htmlspecialchars($co['craft_size']); ?> (<?php echo $co['layers']; ?> Layers)</td>
                                 <td>৳ <?php echo number_format($co['budget'], 2); ?></td>
                                 <td>
-                                    <?php 
-                                        $st = $co['status'];
-                                        $color = ($st === 'Accepted') ? '#28a745' : (($st === 'Confirmed') ? '#2b6cb0' : (($st === 'Rejected') ? '#dc3545' : '#e67e22'));
-                                    ?>
-                                    <span style="background: <?php echo $color; ?>; color: white; padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: bold;">
-                                        <?php echo htmlspecialchars($st); ?>
-                                    </span>
+                                    <?php if ($hasPaid): ?>
+                                        <?php if ($payStatus === 'confirmed'): ?>
+                                            <span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: bold;">
+                                                Order Confirmed
+                                            </span>
+                                        <?php else: ?>
+                                            <span style="background: #f39c12; color: white; padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: bold;">
+                                                Verifying Payment
+                                            </span>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <?php 
+                                            $st = $co['status'];
+                                            $color = ($st === 'Accepted') ? '#28a745' : (($st === 'Rejected') ? '#dc3545' : '#e67e22');
+                                        ?>
+                                        <span style="background: <?php echo $color; ?>; color: white; padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: bold;">
+                                            <?php echo htmlspecialchars($st); ?>
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php if ($co['status'] === 'Accepted'): ?>
-                                        <a href="../../Controller/OrderController.php?action=customer_confirm_custom&order_id=<?php echo $co['id']; ?>" 
-                                           style="background: #28a745; color: white; padding: 5px 12px; text-decoration: none; border-radius: 3px; font-weight: bold; font-size: 12px; display: inline-block;">
-                                            Confirm Order
-                                        </a>
-                                    <?php elseif ($co['status'] === 'Confirmed'): ?>
-                                        <small style="color: #2b6cb0; font-weight: bold;">✔ Added to Cart / Processing</small>
+                                    <?php if ($hasPaid): ?>
+                                        <?php if ($delStatus === 'Delivered'): ?>
+                                            <span style="background: #28a745; color: white; padding: 4px 8px; border-radius: 3px; font-size: 11px; font-weight: bold;">✔ Delivered</span>
+                                        <?php elseif ($delStatus === 'Out for Delivery'): ?>
+                                            <span style="background: #3182ce; color: white; padding: 4px 8px; border-radius: 3px; font-size: 11px; font-weight: bold;">🚚 Out for Delivery (<?php echo $rName; ?>)</span>
+                                        <?php elseif (!empty($co['rider_name']) || $delStatus === 'Assigned'): ?>
+                                            <span style="color: #2b6cb0; font-weight: bold; font-size: 12px;">🚴 Rider Assigned: <?php echo $rName; ?></span>
+                                        <?php elseif ($payStatus === 'confirmed'): ?>
+                                            <span style="color: #d69e2e; font-weight: bold; font-size: 12px;">🛠 Crafting in Workshop</span>
+                                        <?php else: ?>
+                                            <span style="color: #718096; font-size: 12px;">Waiting for Admin Verification</span>
+                                        <?php endif; ?>
+                                    <?php elseif ($co['status'] === 'Accepted'): ?>
+                                        <div style="display: flex; gap: 8px; align-items: center;">
+                                            <a href="custom_checkout.php?order_id=<?php echo $co['id']; ?>" 
+                                               style="background: #28a745; color: white; padding: 6px 12px; text-decoration: none; border-radius: 3px; font-weight: bold; font-size: 12px; display: inline-block;">
+                                                Proceed to Payment →
+                                            </a>
+                                            <a href="../../Controller/OrderController.php?action=customer_reject_custom&order_id=<?php echo $co['id']; ?>" 
+                                               onclick="return confirm('Are you sure you want to decline this quotation?');"
+                                               style="background: #e53e3e; color: white; padding: 6px 10px; text-decoration: none; border-radius: 3px; font-weight: bold; font-size: 12px; display: inline-block;">
+                                                Reject
+                                            </a>
+                                        </div>
                                     <?php elseif ($co['status'] === 'Pending Review'): ?>
                                         <small style="color: #718096;">Waiting for Review</small>
+                                    <?php elseif ($co['status'] === 'Rejected'): ?>
+                                        <small style="color: #dc3545; font-weight: bold;">Quotation Declined</small>
                                     <?php else: ?>
-                                        <small style="color: #dc3545;">Declined</small>
+                                        <small style="color: #28a745; font-weight: bold;">✔ Processed</small>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -156,33 +197,34 @@ $storeOrders  = ($customerId > 0) ? getOrdersByCustomer($customerId) : null;
                 <tbody>
                     <?php if ($storeOrders && mysqli_num_rows($storeOrders) > 0): ?>
                         <?php while ($so = mysqli_fetch_assoc($storeOrders)): ?>
+                            <?php 
+                                $isConfirmed = (strtolower($so['status']) === 'confirmed' || strtolower($so['status']) === 'delivered'); 
+                                $delStatus = trim($so['delivery_status'] ?? '');
+                                $rName = !empty($so['rider_name']) ? htmlspecialchars($so['rider_name']) : 'Rider';
+                            ?>
                             <tr>
                                 <td>#ORD-<?php echo $so['id']; ?></td>
                                 <td><strong><?php echo htmlspecialchars($so['product_name']); ?></strong></td>
                                 <td><?php echo $so['quantity']; ?> pcs</td>
                                 <td>৳ <?php echo number_format($so['total_price'], 2); ?></td>
                                 <td>
-                                    <?php $isConfirmed = (strtolower($so['status']) === 'confirmed'); ?>
                                     <span style="background: <?php echo $isConfirmed ? '#28a745' : '#f39c12'; ?>; color: white; padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: bold;">
-                                        <?php echo $isConfirmed ? 'Order Confirmed' : 'Verifying Request'; ?>
+                                        <?php echo ($delStatus === 'Delivered') ? 'Completed' : ($isConfirmed ? 'Order Confirmed' : 'Verifying Request'); ?>
                                     </span>
                                 </td>
                                 <td>
                                     <?php 
-                                            $delStatus = !empty($so['delivery_status']) ? trim($so['delivery_status']) : '';
-                                            $rName     = !empty($so['rider_name']) ? htmlspecialchars($so['rider_name']) : 'Assigned Rider';
-                                    
-                                            if ($delStatus === 'Delivered') {
-                                                echo "<span style='background: #28a745; color: white; padding: 4px 8px; border-radius: 3px; font-size: 11px; font-weight: bold;'>✔ Delivered</span>";
-                                            } elseif ($delStatus === 'Out for Delivery') {
-                                                echo "<span style='background: #3182ce; color: white; padding: 4px 8px; border-radius: 3px; font-size: 11px; font-weight: bold;'>🚚 Out for Delivery (" . $rName . ")</span>";
-                                            } elseif (!empty($so['rider_id']) || $delStatus === 'Assigned' || $delStatus === 'Ready for Delivery') {
-                                                echo "<span style='color: #2b6cb0; font-weight: bold;'>🚴 Assigned Rider: " . $rName . "</span>";
-                                            } elseif (strtolower($so['status']) === 'confirmed') {
-                                                echo "<strong style='color: #d69e2e;'>🛠 Crafting in Workshop</strong>";
-                                            } else {
-                                                echo "<span style='color: #718096;'>Verifying Payment</span>";
-                                            }
+                                        if ($delStatus === 'Delivered' || strtolower($so['status']) === 'delivered') {
+                                            echo "<span style='background: #28a745; color: white; padding: 4px 8px; border-radius: 3px; font-size: 11px; font-weight: bold;'>✔ Delivered</span>";
+                                        } elseif ($delStatus === 'Out for Delivery') {
+                                            echo "<span style='background: #3182ce; color: white; padding: 4px 8px; border-radius: 3px; font-size: 11px; font-weight: bold;'>🚚 Out for Delivery (" . $rName . ")</span>";
+                                        } elseif (!empty($so['rider_id']) || $delStatus === 'Assigned') {
+                                            echo "<strong style='color: #2b6cb0;'>🚴 Assigned Delivery Man: " . $rName . "</strong>";
+                                        } elseif ($isConfirmed) {
+                                            echo "<strong style='color: #d69e2e;'>🛠 Crafting in Workshop</strong>";
+                                        } else {
+                                            echo "<span style='color: #888;'>Verifying Request</span>";
+                                        }
                                     ?>
                                 </td>
                             </tr>

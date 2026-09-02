@@ -61,65 +61,110 @@ if ($riders) {
 
 <div class="panel">
     <div class="panel-header">
-        <h3>Custom Craft Requests</h3>
+        <h3>🎨 Custom Craft Management</h3>
     </div>
     <table class="data-table">
         <thead>
             <tr>
                 <th>Req ID</th>
-                <th>Customer Name</th>
-                <th>Craft Requirements</th>
-                <th>Sample</th>
-                <th>Offered Budget</th>
-                <th>Status</th>
-                <th>Review & Pricing Action</th>
+                <th>Customer & Craft Requirements</th>
+                <th>Quotation / Amount</th>
+                <th>Payment Details</th>
+                <th>Status & Verification</th>
+                <th>Assign Rider</th>
             </tr>
         </thead>
         <tbody>
             <?php if ($customOrders && mysqli_num_rows($customOrders) > 0): ?>
                 <?php while ($co = mysqli_fetch_assoc($customOrders)): ?>
+                    <?php 
+                        $hasPaid = !empty($co['linked_order_id']);
+                        $isVerified = (strtolower($co['payment_status'] ?? '') === 'confirmed');
+                    ?>
                     <tr>
-                        <td>#CR-<?php echo $co['id']; ?></td>
+                        <td><b>#CR-<?php echo $co['id']; ?></b></td>
                         <td>
-                            <?php echo htmlspecialchars($co['customer_name']); ?><br>
-                            <small style="color:#718096;">📞 <?php echo htmlspecialchars($co['customer_phone']); ?></small>
+                            <strong><?php echo htmlspecialchars($co['customer_name']); ?></strong> (📞 <?php echo htmlspecialchars($co['customer_phone']); ?>)<br>
+                            <b><?php echo htmlspecialchars($co['craft_type']); ?></b> (<?php echo htmlspecialchars($co['craft_size']); ?>, <?php echo $co['layers']; ?> Layers)<br>
+                            <small style="color: #666;">Theme: <?php echo htmlspecialchars($co['color_theme']); ?> | Note: <?php echo htmlspecialchars($co['instructions']); ?></small>
+                            <?php if (!empty($co['sample_image'])): ?>
+                                <br><a href="../../assets/images/uploads/<?php echo $co['sample_image']; ?>" target="_blank" style="font-size: 11px; color: #2b6cb0;">🔍 View Sample Reference</a>
+                            <?php endif; ?>
                         </td>
                         <td>
-                            <b><?php echo htmlspecialchars($co['craft_type']); ?></b> 
-                            (<?php echo htmlspecialchars($co['craft_size']); ?>, <?php echo $co['layers']; ?> Layers, Theme: <?php echo htmlspecialchars($co['color_theme']); ?>)
-                            <br><small style="color: #555;">Note: <?php echo htmlspecialchars($co['instructions']); ?></small>
-                        </td>
-                        <td>
-                            <a href="../../assets/images/uploads/<?php echo $co['sample_image']; ?>" target="_blank">
-                                <img src="../../assets/images/uploads/<?php echo $co['sample_image']; ?>" alt="Sample" style="width: 48px; height: 48px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc;" onerror="this.src='../../assets/images/sample1.jpg';">
-                            </a>
-                        </td>
-                        <td><strong><?php echo number_format($co['budget'], 2); ?> ৳</strong></td>
-                        <td>
-                            <span class="badge <?php echo ($co['status'] === 'Accepted') ? 'badge-ready' : (($co['status'] === 'Rejected') ? 'badge-danger' : 'badge-pending'); ?>">
-                                <?php echo htmlspecialchars($co['status']); ?>
-                            </span>
-                        </td>
-                        <td>
+                            <strong>৳ <?php echo number_format($co['budget'], 2); ?></strong>
                             <?php if ($co['status'] === 'Pending Review'): ?>
-                                <form action="../../Controller/AdminController.php" method="POST" style="margin: 0; display: flex; flex-direction: column; gap: 5px;">
+                                <form action="../../Controller/AdminController.php" method="POST" style="margin-top: 8px; display: flex; flex-direction: column; gap: 5px;">
                                     <input type="hidden" name="action" value="accept_and_quote">
                                     <input type="hidden" name="order_id" value="<?php echo $co['id']; ?>">
-                                    <input type="number" step="0.01" name="final_price" placeholder="Set Price (৳)" value="<?php echo ($co['budget'] > 0) ? $co['budget'] : ''; ?>" required style="padding: 5px; font-size: 12px; border: 1px solid #ccc; border-radius: 4px; width: 120px;">
-                                    <button type="submit" style="background: #28a745; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: bold;">Accept & Send Price</button>
+                                    <input type="number" step="0.01" name="final_price" placeholder="Set Price (৳)" value="<?php echo ($co['budget'] > 0) ? $co['budget'] : ''; ?>" required style="padding: 4px; font-size: 11px; border: 1px solid #ccc; border-radius: 3px; width: 100px;">
+                                    <button type="submit" style="background: #28a745; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: bold;">Send Price</button>
                                 </form>
-                                <a href="../../Controller/AdminController.php?action=reject&order_id=<?php echo $co['id']; ?>" style="color: #e53e3e; font-size: 11px; text-decoration: none; margin-top: 4px; display: inline-block;">Reject Request</a>
+                                <a href="../../Controller/AdminController.php?action=reject&order_id=<?php echo $co['id']; ?>" style="color: #e53e3e; font-size: 11px; text-decoration: none; margin-top: 2px;">Reject</a>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ($hasPaid): ?>
+                                <b><?php echo htmlspecialchars($co['payment_gateway']); ?></b><br>
+                                <small>Sender: <?php echo htmlspecialchars($co['sender_number']); ?></small><br>
+                                <small>Trx: <code><?php echo htmlspecialchars($co['trx_id']); ?></code></small><br>
+                                <small style="color: #4a5568;">📍 <?php echo htmlspecialchars($co['delivery_address']); ?></small>
                             <?php elseif ($co['status'] === 'Accepted'): ?>
-                                <span style="color: #2b6cb0; font-size: 12px; font-weight: bold;">Quotation Sent (Waiting for Customer)</span>
+                                <span style="color: #2b6cb0; font-size: 12px; font-weight: bold;">Quotation Sent (Awaiting Payment)</span>
                             <?php else: ?>
-                                <small style="color: #888;"><?php echo htmlspecialchars($co['status']); ?></small>
+                                <small style="color: #718096;">Not Paid</small>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ($hasPaid): ?>
+                                <span class="badge <?php echo $isVerified ? 'badge-ready' : 'badge-making'; ?>">
+                                    <?php echo $isVerified ? 'Payment Confirmed' : 'Verifying Request'; ?>
+                                </span>
+                                <?php if (!$isVerified): ?>
+                                    <br><br>
+                                    <a href="../../Controller/AdminController.php?action=confirm_order&order_id=<?php echo $co['linked_order_id']; ?>" 
+                                       style="color: #28a745; font-weight: bold; text-decoration: none; font-size: 11px; border: 1px solid #28a745; padding: 3px 6px; border-radius: 3px; background: #eafaf1; display: inline-block;">
+                                        Verify & Confirm
+                                    </a>
+                                <?php else: ?>
+                                    <br><small style="color: #28a745; font-weight: bold;">✔ In Workshop Production</small>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <span class="badge <?php echo ($co['status'] === 'Accepted') ? 'badge-ready' : (($co['status'] === 'Rejected') ? 'badge-danger' : 'badge-pending'); ?>">
+                                    <?php echo htmlspecialchars($co['status']); ?>
+                                </span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ($hasPaid && $isVerified): ?>
+                                <form action="../../Controller/AdminController.php" method="POST" style="margin: 0; display: flex; flex-direction: column; gap: 4px;">
+                                    <input type="hidden" name="action" value="assign_rider">
+                                    <input type="hidden" name="order_id" value="<?php echo $co['linked_order_id']; ?>">
+                                    <input type="hidden" name="address" value="<?php echo htmlspecialchars($co['delivery_address']); ?>">
+                                    <select name="rider_id" required style="font-size: 11px; padding: 3px;">
+                                        <option value="">-- Select Rider --</option>
+                                        <?php foreach ($riderList as $rider): ?>
+                                            <option value="<?php echo $rider['id']; ?>" <?php echo (isset($co['rider_id']) && $co['rider_id'] == $rider['id']) ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($rider['name']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button type="submit" style="background: #2b6cb0; color: white; border: none; padding: 4px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; cursor: pointer;">
+                                        <?php echo (!empty($co['rider_id'])) ? 'Re-assign' : 'Assign Rider'; ?>
+                                    </button>
+                                </form>
+                                <?php if (!empty($co['rider_name'])): ?>
+                                    <small style="color: #28a745; font-weight: bold; display: block; margin-top: 3px;">Assigned: <?php echo htmlspecialchars($co['rider_name']); ?></small>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <small style="color: #a0aec0;">Unavailable</small>
                             <?php endif; ?>
                         </td>
                     </tr>
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="7" style="text-align: center; color: #888;">No custom craft requests submitted yet.</td>
+                    <td colspan="6" style="text-align: center; color: #888; padding: 20px;">No custom craft requests found.</td>
                 </tr>
             <?php endif; ?>
         </tbody>

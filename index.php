@@ -62,19 +62,37 @@ if (!empty($selectedCategory)) {
                                 </span>
                             </div>
 
-                            <?php if ($prod['stock'] > 0): ?>
-                                <form action="Controller/CartController.php" method="POST">
-                                    <input type="hidden" name="action" value="add_to_cart">
-                                    <input type="hidden" name="product_id" value="<?php echo $prod['id']; ?>">
-                                    <button type="submit" style="width: 100%; background: #341946; color: white; border: none; padding: 9px; border-radius: 4px; font-weight: bold; cursor: pointer;">
-                                        Add to Cart 🛒
-                                    </button>
-                                </form>
-                            <?php else: ?>
-                                <button disabled style="width: 100%; background: #ccc; color: #666; border: none; padding: 9px; border-radius: 4px; cursor: not-allowed;">
-                                    Sold Out
+                            <!-- button -->
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" 
+                                        onclick='openProductModal(<?php echo json_encode([
+                                            "id"          => $prod["id"],
+                                            "title"       => $prod["title"],
+                                            "category"    => $prod["category"],
+                                            "price"       => number_format($prod["price"], 2),
+                                            "stock"       => $prod["stock"],
+                                            "size"        => !empty($prod["size"]) ? $prod["size"] : "Standard Craft Fit",
+                                            "description" => !empty($prod["description"]) ? $prod["description"] : "Handcrafted with special care and premium materials. No extra description provided.",
+                                            "image"       => !empty($prod["image"]) ? $prod["image"] : "sample1.jpg"
+                                        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>)'
+                                        style="flex: 1; padding: 9px 0; background: #fff; color: #341946; border: 1.5px solid #341946; border-radius: 4px; font-weight: 600; font-size: 13px; cursor: pointer;">
+                                    View Details
                                 </button>
-                            <?php endif; ?>
+
+                                <?php if ($prod['stock'] > 0): ?>
+                                    <form action="Controller/CartController.php" method="POST" style="flex: 1; margin: 0;">
+                                        <input type="hidden" name="action" value="add_to_cart">
+                                        <input type="hidden" name="product_id" value="<?php echo $prod['id']; ?>">
+                                        <button type="submit" style="width: 100%; background: #341946; color: white; border: none; padding: 9px 0; border-radius: 4px; font-weight: bold; font-size: 13px; cursor: pointer;">
+                                            Add to Cart 🛒
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <button disabled style="flex: 1; background: #ccc; color: #666; border: none; padding: 9px 0; border-radius: 4px; cursor: not-allowed; font-size: 13px;">
+                                        Sold Out
+                                    </button>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -96,8 +114,6 @@ if (!empty($selectedCategory)) {
 </div>
 
 <div class="album-grid">
-
-    <!-- Album 1 -->
     <div class="album-card">
         <div class="album-thumb">📖</div>
         <h3>Memory Scrapbooks</h3>
@@ -106,7 +122,6 @@ if (!empty($selectedCategory)) {
         <a href="index.php?category=Scrapbook#store-products" class="btn-card">View Items</a> 
     </div>
 
-    <!-- Album 2 -->
     <div class="album-card">
         <div class="album-thumb">🎁</div>
         <h3>Explosion Boxes</h3>
@@ -115,7 +130,6 @@ if (!empty($selectedCategory)) {
         <a href="index.php?category=Explosion Box#store-products" class="btn-card">View Items</a>
     </div>
 
-    <!-- Album 3 -->
     <div class="album-card">
         <div class="album-thumb">💌</div>
         <h3>Greeting Cards</h3>
@@ -124,7 +138,6 @@ if (!empty($selectedCategory)) {
         <a href="index.php?category=Greeting Cards#store-products" class="btn-card">View Items</a>
     </div>
 
-    <!-- Album 4 -->
     <div class="album-card">
         <div class="album-thumb">✒️</div>
         <h3>Nikah & Signature Pens</h3>
@@ -133,7 +146,6 @@ if (!empty($selectedCategory)) {
         <a href="index.php?category=Nikah & Signature Pens#store-products" class="btn-card">View Items</a>
     </div>
 
-    <!-- Album 5 -->
     <div class="album-card">
         <div class="album-thumb">💐</div>
         <h3>Handmade Floral Bouquets</h3>
@@ -142,7 +154,6 @@ if (!empty($selectedCategory)) {
         <a href="index.php?category=Floral Bouquets#store-products" class="btn-card">View Items</a>
     </div>
 
-    <!-- Album 6 -->
     <div class="album-card">
         <div class="album-thumb">🖼️</div>
         <h3>Photo Frames</h3>
@@ -151,7 +162,6 @@ if (!empty($selectedCategory)) {
         <a href="index.php?category=Photo Frames#store-products" class="btn-card">View Items</a>
     </div>
 
-    <!-- Album 7 -->
     <div class="album-card">
         <div class="album-thumb">🍫</div>
         <h3>Chocolate Gift Hampers</h3>
@@ -160,7 +170,6 @@ if (!empty($selectedCategory)) {
         <a href="index.php?category=Chocolate Gift Hampers#store-products" class="btn-card">View Items</a>
     </div>
 
-    <!-- Album 8 -->
     <div class="album-card">
         <div class="album-thumb">🏮</div>
         <h3>Shadow Boxes & Light Jars</h3>
@@ -169,7 +178,6 @@ if (!empty($selectedCategory)) {
         <a href="index.php?category=Shadow Boxes & Light Jars#store-products" class="btn-card">View Items</a>
     </div>
 
-    <!-- Album 9 -->
     <div class="album-card">
         <div class="album-thumb">🎨</div>
         <h3>Custom Illustration Art</h3>
@@ -177,8 +185,93 @@ if (!empty($selectedCategory)) {
         <div class="album-price">Starts from 900 BDT</div>
         <a href="index.php?category=Custom Illustration Art#store-products" class="btn-card">View Items</a>
     </div>
-
 </div>
+
+<!-- Craft Details Modal Popup -->
+<div id="craftDetailsModal" style="display: none; position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); justify-content: center; align-items: center;">
+    <div style="background: #fff; width: 92%; max-width: 650px; border-radius: 12px; padding: 25px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.25); font-family: sans-serif;">
+        <button onclick="closeProductModal()" style="position: absolute; right: 15px; top: 12px; background: none; border: none; font-size: 28px; cursor: pointer; color: #888; line-height: 1;">&times;</button>
+        
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px;">
+            <div style="flex: 1; min-width: 220px;">
+                <img id="mProductImg" src="" alt="Craft Details" style="width: 100%; height: 260px; object-fit: cover; border-radius: 8px; border: 1px solid #eee;" onerror="this.src='assets/images/sample1.jpg';">
+            </div>
+
+            <div style="flex: 1.2; min-width: 240px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <span id="mProductCategory" style="background: #f3e5f5; color: #6a1b9a; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold;">Category</span>
+                    <h2 id="mProductTitle" style="margin: 8px 0; color: #2d3748; font-size: 20px;">Product Title</h2>
+                    
+                    <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px;">
+                        <span id="mProductPrice" style="font-size: 20px; font-weight: bold; color: #2b6cb0;">৳ 0.00</span>
+                        <span id="mProductStock" style="font-size: 12px; color: #38a169; font-weight: bold;">In Stock</span>
+                    </div>
+
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; color: #4a5568;">
+                        <div style="margin-bottom: 4px;"><strong>Craft Type:</strong> 100% Authentic Handmade</div>
+                        <div style="margin-bottom: 4px;"><strong>Size / Dimension:</strong> <span id="mProductSize" style="color: #572553; font-weight: bold;">Standard</span></div>
+                        <div><strong>Care Instructions:</strong> Keep away from water & direct flame</div>
+                    </div>
+
+                    <div style="font-size: 13px; font-weight: bold; color: #2d3748; margin-bottom: 4px;">Product Description:</div>
+                    <div id="mProductDesc" style="font-size: 13px; color: #4a5568; line-height: 1.5; max-height: 100px; overflow-y: auto; white-space: pre-line; background: #fff; padding: 4px 0;">
+                    </div>
+                </div>
+
+                <form action="Controller/CartController.php" method="POST" style="margin-top: 15px;">
+                    <input type="hidden" name="action" value="add_to_cart">
+                    <input type="hidden" name="product_id" id="mProductId" value="">
+                    <button type="submit" id="mCartBtn" style="width: 100%; background: #341946; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                        Add to Cart 🛒
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openProductModal(product) {
+    document.getElementById('mProductId').value = product.id;
+    document.getElementById('mProductTitle').innerText = product.title;
+    document.getElementById('mProductCategory').innerText = product.category;
+    document.getElementById('mProductPrice').innerText = '৳ ' + product.price;
+    document.getElementById('mProductSize').innerText = product.size;
+    document.getElementById('mProductDesc').innerText = product.description;
+    
+    const stockEl = document.getElementById('mProductStock');
+    const cartBtn = document.getElementById('mCartBtn');
+    if (parseInt(product.stock) > 0) {
+        stockEl.innerText = product.stock + ' in stock';
+        stockEl.style.color = '#38a169';
+        cartBtn.disabled = false;
+        cartBtn.innerText = 'Add to Cart 🛒';
+        cartBtn.style.background = '#341946';
+        cartBtn.style.cursor = 'pointer';
+    } else {
+        stockEl.innerText = 'Out of Stock';
+        stockEl.style.color = '#e53e3e';
+        cartBtn.disabled = true;
+        cartBtn.innerText = 'Sold Out';
+        cartBtn.style.background = '#ccc';
+        cartBtn.style.cursor = 'not-allowed';
+    }
+
+    document.getElementById('mProductImg').src = 'assets/images/uploads/' + product.image;
+    document.getElementById('craftDetailsModal').style.display = 'flex';
+}
+
+function closeProductModal() {
+    document.getElementById('craftDetailsModal').style.display = 'none';
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('craftDetailsModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
 
 <?php
 require_once __DIR__ . '/View/layouts/footer.php';

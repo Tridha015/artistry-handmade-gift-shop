@@ -9,7 +9,7 @@ function getOrdersByCustomer(int $customerId) {
             JOIN products p ON o.product_id = p.id 
             LEFT JOIN deliveries d ON o.id = d.order_id 
             LEFT JOIN users u ON d.rider_id = u.id 
-            WHERE o.customer_id = $customerId 
+            WHERE o.customer_id = $customerId AND (o.trx_id NOT LIKE 'CUSTOM-%' OR o.trx_id IS NULL)
             ORDER BY o.id DESC";
     return mysqli_query($conn, $sql);
 }
@@ -17,7 +17,17 @@ function getOrdersByCustomer(int $customerId) {
 function getCustomOrdersByCustomer(int $customerId) {
     global $conn;
     $customerId = intval($customerId);
-    $sql = "SELECT * FROM custom_orders WHERE customer_id = $customerId ORDER BY id DESC";
+    $sql = "SELECT co.*, 
+                   o.id AS linked_order_id, 
+                   o.status AS payment_status, 
+                   d.delivery_status, 
+                   r.name AS rider_name 
+            FROM custom_orders co 
+            LEFT JOIN orders o ON (o.customer_id = co.customer_id AND o.trx_id LIKE CONCAT('CUSTOM-', co.id, '-%'))
+            LEFT JOIN deliveries d ON o.id = d.order_id 
+            LEFT JOIN users r ON d.rider_id = r.id 
+            WHERE co.customer_id = $customerId 
+            ORDER BY co.id DESC";
     return mysqli_query($conn, $sql);
 }
 

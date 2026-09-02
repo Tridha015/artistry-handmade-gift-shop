@@ -1,5 +1,9 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 ob_start();
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -59,6 +63,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'ajax_update_stock_price') {
     exit();
 }
 
+// ৩. Delete Product
 if (isset($_GET['action']) && $_GET['action'] === 'delete') {
     $productId = intval($_GET['id'] ?? 0);
     $sellerId  = intval($_SESSION['user_id'] ?? 0);
@@ -70,18 +75,20 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete') {
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
+// ৪. Add Product
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_product') {
     $sellerId    = intval($_SESSION['user_id'] ?? 0);
     $title       = trim($_POST['title'] ?? '');
     $category    = trim($_POST['category'] ?? '');
     $price       = floatval($_POST['price'] ?? 0);
     $stock       = intval($_POST['stock'] ?? 0);
+    $size        = trim($_POST['size'] ?? '');
     $description = trim($_POST['description'] ?? '');
 
     $imageName = 'sample1.jpg';
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $fileTmpPath = $_FILES['image']['tmp_name'];
-        $fileName = time() . '_' . basename($_FILES['image']['name']);
+        $fileName = time() . '_' . preg_replace("/[^a-zA-Z0-9._-]/", "", basename($_FILES['image']['name']));
         $uploadFileDir = __DIR__ . '/../assets/images/uploads/';
 
         if (!is_dir($uploadFileDir)) {
@@ -95,12 +102,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
     }
 
     if (!empty($title) && $price > 0) {
-        addProduct($sellerId, $title, $category, $price, $stock, $description, $imageName);
-        header("Location: ../View/seller/dashboard.php?success=Product added successfully");
-        exit();
+        $res = addProduct($sellerId, $title, $category, $price, $stock, $size, $description, $imageName);
+        if ($res) {
+            header("Location: ../View/seller/dashboard.php?success=Product added successfully");
+            exit();
+        } else {
+            header("Location: ../View/seller/add_product.php?error=Database insertion failed");
+            exit();
+        }
     } else {
         header("Location: ../View/seller/add_product.php?error=Invalid input fields");
         exit();
     }
 }
-?>
+
+// ৫. Edit Product 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit_product') {
+    $productId   = intval($_POST['product_id'] ?? 0);
+    $sellerId    = intval($_SESSION['user_id'] ?? 0);
+    $title       = trim($_POST['title'] ?? '');
+    $category    = trim($_POST['category'] ?? '');
+    $price       = floatval($_POST['price'] ?? 0);
+    $stock       = intval($_POST['stock'] ?? 0);
+    $size        = trim($_POST['size'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+
+    $newImageName = null;
+    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $_FILES['image']['tmp_name'];
+        $fileName = time() . '_' . preg_replace("/[^a-zA-Z0-9._-]/", "", basename($_FILES['image']['name']));
+        $uploadFileDir = __DIR__ . '/../assets/images/uploads/';
+
+        if (!is_dir($uploadFileDir)) {
+            mkdir($uploadFileDir, 0777, true);
+        }
+
+        $dest_path = $uploadFileDir . $fileName;
+        if (move_uploaded_file($fileTmpPath, $dest_path)) {
+            $newImageName = $fileName;
+        }
+    }
+
+    if ($productId > 0 && !empty($title) && $price > 0) {
+        updateProduct($productId, $sellerId, $title, $category, $price, $stock, $size, $description, $newImageName);
+        header("Location: ../View/seller/dashboard.php?success=Product updated successfully");
+        exit();
+    } else {
+        header("Location: ../View/seller/edit_product.php?id=$productId&error=Invalid input fields");
+        exit();
+    }
+}
+
+header("Location: ../View/seller/dashboard.php");
+exit();

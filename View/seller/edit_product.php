@@ -13,7 +13,7 @@ if (!isset($_GET['id'])) {
 }
 
 $productId = intval($_GET['id']);
-$sellerId  = $_SESSION['user_id'];
+$sellerId  = $_SESSION['user_id'] ?? 0;
 $product   = getProductById($productId, $sellerId);
 
 if (!$product) {
@@ -46,11 +46,15 @@ require_once __DIR__ . '/../layouts/header.php';
         <div style="margin-bottom: 15px;">
             <label>Category</label><br>
             <select name="category" required style="width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box;">
-                <option value="Explosion Box" <?php echo ($product['category'] === 'Explosion Box') ? 'selected' : ''; ?>>Explosion Box</option>
-                <option value="Scrapbook" <?php echo ($product['category'] === 'Scrapbook') ? 'selected' : ''; ?>>Scrapbook</option>
-                <option value="Bouquet" <?php echo ($product['category'] === 'Bouquet') ? 'selected' : ''; ?>>Floral Bouquet</option>
-                <option value="Gift Box" <?php echo ($product['category'] === 'Gift Box') ? 'selected' : ''; ?>>Handmade Gift Box</option>
-                <option value="Wall Art" <?php echo ($product['category'] === 'Wall Art') ? 'selected' : ''; ?>>Wall Decor & Art</option>
+                <option value="Scrapbook" <?php echo ($product['category'] === 'Scrapbook') ? 'selected' : ''; ?>>Memory Scrapbooks</option>
+                <option value="Explosion Box" <?php echo ($product['category'] === 'Explosion Box') ? 'selected' : ''; ?>>Explosion Boxes</option>
+                <option value="Greeting Cards" <?php echo ($product['category'] === 'Greeting Cards') ? 'selected' : ''; ?>>Greeting Cards</option>
+                <option value="Nikah & Signature Pens" <?php echo ($product['category'] === 'Nikah & Signature Pens') ? 'selected' : ''; ?>>Nikah & Signature Pens</option>
+                <option value="Floral Bouquets" <?php echo ($product['category'] === 'Floral Bouquets') ? 'selected' : ''; ?>>Handmade Floral Bouquets</option>
+                <option value="Photo Frames" <?php echo ($product['category'] === 'Photo Frames') ? 'selected' : ''; ?>>Photo Frames</option>
+                <option value="Chocolate Gift Hampers" <?php echo ($product['category'] === 'Chocolate Gift Hampers') ? 'selected' : ''; ?>>Chocolate Gift Hampers</option>
+                <option value="Shadow Boxes & Light Jars" <?php echo ($product['category'] === 'Shadow Boxes & Light Jars') ? 'selected' : ''; ?>>Shadow Boxes & Light Jars</option>
+                <option value="Custom Illustration Art" <?php echo ($product['category'] === 'Custom Illustration Art') ? 'selected' : ''; ?>>Custom Illustration Art</option>
             </select>
         </div>
 
@@ -63,6 +67,16 @@ require_once __DIR__ . '/../layouts/header.php';
                 <label>Available Stock</label><br>
                 <input type="number" name="stock" value="<?php echo htmlspecialchars($product['stock']); ?>" min="0" required style="width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box;">
             </div>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label>Craft Size / Dimensions</label><br>
+            <input type="text" name="size" value="<?php echo htmlspecialchars($product['size'] ?? ''); ?>" placeholder="ex: 6x6 inches, 8x10 inches" style="width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label>Product Description</label><br>
+            <textarea name="description" rows="3" style="width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box;"><?php echo htmlspecialchars($product['description'] ?? ''); ?></textarea>
         </div>
 
         <div style="margin-bottom: 20px;">
