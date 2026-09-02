@@ -7,7 +7,8 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../Model/AdminModel.php';
 
-// ১. AJAX Toggle User Status (Real-time Stats সহ)
+global $conn;
+
 if (isset($_POST['action']) && $_POST['action'] === 'ajax_toggle_user_status') {
     header('Content-Type: application/json');
 
@@ -37,7 +38,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'ajax_toggle_user_status') {
         }
     }
 
-    echo json_encode(['status' => 'error', 'message' => 'Invalid parameters provided']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid parameters']);
     exit();
 }
 
@@ -46,34 +47,51 @@ if (!isset($_SESSION['user_role']) || strtolower($_SESSION['user_role']) !== 'ad
     exit();
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'accept_and_quote') {
+    $orderId    = intval($_POST['order_id'] ?? 0);
+    $finalPrice = floatval($_POST['final_price'] ?? 0);
+
+    if ($orderId > 0 && $finalPrice > 0) {
+        setCustomOrderAdminPrice($orderId, $finalPrice);
+        header("Location: ../View/admin/dashboard.php?success=Quotation updated and sent to customer!");
+    } else {
+        header("Location: ../View/admin/dashboard.php?error=Please enter a valid price quotation");
+    }
+    exit();
+}
+
 if (isset($_GET['action']) && isset($_GET['order_id'])) {
     $orderId = intval($_GET['order_id']);
     $action  = $_GET['action'];
 
-    if ($action === 'accept') {
-        updateCustomOrderStatus($orderId, 'Accepted');
-    } elseif ($action === 'reject') {
+    if ($action === 'reject') {
         updateCustomOrderStatus($orderId, 'Rejected');
+        header("Location: ../View/admin/dashboard.php?success=Custom request rejected");
+        exit();
     }
-
-    header("Location: ../View/admin/dashboard.php?success=Custom order status updated");
-    exit();
 }
 
 if (isset($_GET['action']) && $_GET['action'] === 'confirm_order' && isset($_GET['order_id'])) {
     $orderId = intval($_GET['order_id']);
     updateStoreOrderStatus($orderId, 'Confirmed');
-    header("Location: ../View/admin/dashboard.php?success=Payment verified and order confirmed!");
+    header("Location: ../View/admin/dashboard.php?success=Payment verified & Order confirmed!");
     exit();
 }
 
-if (isset($_POST['action']) && $_POST['action'] === 'assign_rider') {
-    $orderId = intval($_POST['order_id']);
-    $riderId = intval($_POST['rider_id']);
-    $address = trim($_POST['address']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'assign_rider') {
+    $orderId = intval($_POST['order_id'] ?? 0);
+    $riderId = intval($_POST['rider_id'] ?? 0);
+    $address = trim($_POST['address'] ?? '');
 
-    assignRiderToOrder($orderId, $riderId, $address);
-    header("Location: ../View/admin/dashboard.php?success=Rider assigned successfully");
+    if ($orderId > 0 && $riderId > 0) {
+        assignRiderToOrder($orderId, $riderId, $address);
+        header("Location: ../View/admin/dashboard.php?success=Rider assigned to order #ORD-" . $orderId);
+    } else {
+        header("Location: ../View/admin/dashboard.php?error=Please select a valid rider");
+    }
     exit();
 }
+
+header("Location: ../View/admin/dashboard.php");
+exit();
 ?>

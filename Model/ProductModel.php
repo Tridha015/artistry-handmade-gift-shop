@@ -1,78 +1,78 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
 
-// ১. সব প্রোডাক্ট পাওয়ার ফাংশন
 function getAllProducts() {
     global $conn;
     $sql = "SELECT * FROM products ORDER BY id DESC";
     return mysqli_query($conn, $sql);
 }
 
-// ২. ক্যাটাগরি অনুযায়ী ফিল্টার করা
-function getProductsByCategory($category) {
+function getProductsByCategory(string $category) {
     global $conn;
     $category = mysqli_real_escape_string($conn, $category);
     $sql = "SELECT * FROM products WHERE category = '$category' ORDER BY id DESC";
     return mysqli_query($conn, $sql);
 }
 
-// ৩. নির্দিষ্ট সেলারের প্রোডাক্ট লিস্ট পাওয়া
-function getProductsBySeller($seller_id) {
+function getProductsBySeller(int $seller_id) {
     global $conn;
     $seller_id = intval($seller_id);
     $sql = "SELECT * FROM products WHERE seller_id = $seller_id ORDER BY id DESC";
     return mysqli_query($conn, $sql);
 }
 
-// ৪. আইডি দিয়ে নির্দিষ্ট ১টি প্রোডাক্ট আনা
-function getProductById($id) {
+function getProductById(int $id) {
     global $conn;
     $id = intval($id);
     $sql = "SELECT * FROM products WHERE id = $id LIMIT 1";
     $result = mysqli_query($conn, $sql);
-    return ($result && mysqli_num_rows($result) > 0) ? mysqli_fetch_assoc($result) : false;
+    return mysqli_fetch_assoc($result);
 }
 
-// ৫. নতুন প্রোডাক্ট ডেটাবেজে যুক্ত করা
-function addProduct($seller_id, $title, $category, $price, $stock, $image) {
+function searchProductsLive(string $keyword) {
     global $conn;
-    $seller_id = intval($seller_id);
-    $title     = mysqli_real_escape_string($conn, $title);
-    $category  = mysqli_real_escape_string($conn, $category);
-    $price     = floatval($price);
-    $stock     = intval($stock);
-    $image     = mysqli_real_escape_string($conn, $image);
-
-    $sql = "INSERT INTO products (seller_id, title, category, price, stock, image) 
-            VALUES ($seller_id, '$title', '$category', $price, $stock, '$image')";
-            
+    $keyword = mysqli_real_escape_string($conn, $keyword);
+    $sql = "SELECT id, title, price, image, category FROM products 
+            WHERE title LIKE '%$keyword%' OR category LIKE '%$keyword%' 
+            ORDER BY id DESC LIMIT 6";
     return mysqli_query($conn, $sql);
 }
 
-// ৬. প্রোডাক্ট আপডেট করা
-function updateProduct($id, $seller_id, $title, $category, $price, $stock, $image = null) {
+function addProduct(int $seller_id, string $title, string $category, float $price, int $stock, string $description, string $image) {
     global $conn;
-    $id        = intval($id);
-    $seller_id = intval($seller_id);
-    $title     = mysqli_real_escape_string($conn, $title);
-    $category  = mysqli_real_escape_string($conn, $category);
-    $price     = floatval($price);
-    $stock     = intval($stock);
+    $seller_id   = intval($seller_id);
+    $title       = mysqli_real_escape_string($conn, $title);
+    $category    = mysqli_real_escape_string($conn, $category);
+    $price       = floatval($price);
+    $stock       = intval($stock);
+    $description = mysqli_real_escape_string($conn, $description);
+    $image       = mysqli_real_escape_string($conn, $image);
 
-    if (!empty($image)) {
+    $sql = "INSERT INTO products (seller_id, title, category, price, stock, description, image) 
+            VALUES ($seller_id, '$title', '$category', $price, $stock, '$description', '$image')";
+    return mysqli_query($conn, $sql);
+}
+
+function updateProduct(int $id, int $seller_id, string $title, string $category, float $price, int $stock, string $description, ?string $image = null) {
+    global $conn;
+    $id          = intval($id);
+    $seller_id   = intval($seller_id);
+    $title       = mysqli_real_escape_string($conn, $title);
+    $category    = mysqli_real_escape_string($conn, $category);
+    $price       = floatval($price);
+    $stock       = intval($stock);
+    $description = mysqli_real_escape_string($conn, $description);
+
+    if ($image) {
         $image = mysqli_real_escape_string($conn, $image);
-        $sql = "UPDATE products SET title = '$title', category = '$category', price = $price, stock = $stock, image = '$image' 
-                WHERE id = $id AND seller_id = $seller_id";
+        $sql = "UPDATE products SET title = '$title', category = '$category', price = $price, stock = $stock, description = '$description', image = '$image' WHERE id = $id AND seller_id = $seller_id";
     } else {
-        $sql = "UPDATE products SET title = '$title', category = '$category', price = $price, stock = $stock 
-                WHERE id = $id AND seller_id = $seller_id";
+        $sql = "UPDATE products SET title = '$title', category = '$category', price = $price, stock = $stock, description = '$description' WHERE id = $id AND seller_id = $seller_id";
     }
-
     return mysqli_query($conn, $sql);
 }
 
-// ৭. প্রোডাক্ট মুছে ফেলা
-function deleteProduct($id, $seller_id) {
+function deleteProduct(int $id, int $seller_id) {
     global $conn;
     $id        = intval($id);
     $seller_id = intval($seller_id);

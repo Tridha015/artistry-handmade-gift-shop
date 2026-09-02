@@ -1,8 +1,12 @@
 <?php
-session_start();
+ob_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../../Model/AdminModel.php';
 
-if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
+if (!isset($_SESSION['user_role']) || strtolower($_SESSION['user_role']) !== 'admin') {
     header("Location: ../auth/login.php?error=Unauthorized Access");
     exit();
 }
@@ -18,8 +22,10 @@ $registrations = getAllRegistrations();
 $riders = getActiveRiders();
 
 $riderList = array();
-while ($r = mysqli_fetch_assoc($riders)) {
-    $riderList[] = $r;
+if ($riders) {
+    while ($r = mysqli_fetch_assoc($riders)) {
+        $riderList[] = $r;
+    }
 }
 ?>
 
@@ -34,23 +40,28 @@ while ($r = mysqli_fetch_assoc($riders)) {
     </div>
     <div class="stat-box">
         <h4>Active Sellers</h4>
-        <div class="count"><?php echo $stats['sellers']; ?> Artisans</div>
+        <div class="count"><span id="stat-sellers"><?php echo $stats['sellers']; ?></span> Artisans</div>
     </div>
     <div class="stat-box">
         <h4>Delivery Riders</h4>
-        <div class="count"><?php echo $stats['riders']; ?> Active</div>
+        <div class="count"><span id="stat-riders"><?php echo $stats['riders']; ?></span> Active</div>
     </div>
 </div>
 
 <?php if (isset($_GET['success'])): ?>
-    <div style="background-color: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin: 15px 0;">
+    <div style="background-color: #d4edda; color: #155724; padding: 12px; border-radius: 4px; margin: 15px 0; font-weight: bold;">
         <?php echo htmlspecialchars($_GET['success']); ?>
+    </div>
+<?php endif; ?>
+<?php if (isset($_GET['error'])): ?>
+    <div style="background-color: #f8d7da; color: #721c24; padding: 12px; border-radius: 4px; margin: 15px 0; font-weight: bold;">
+        <?php echo htmlspecialchars($_GET['error']); ?>
     </div>
 <?php endif; ?>
 
 <div class="panel">
     <div class="panel-header">
-        <h3>Custom Craft Requests (Review & Pricing)</h3>
+        <h3>Custom Craft Requests</h3>
     </div>
     <table class="data-table">
         <thead>
@@ -58,14 +69,14 @@ while ($r = mysqli_fetch_assoc($riders)) {
                 <th>Req ID</th>
                 <th>Customer Name</th>
                 <th>Craft Requirements</th>
-                <th>Sample Reference</th>
+                <th>Sample</th>
                 <th>Offered Budget</th>
                 <th>Status</th>
-                <th>Action</th>
+                <th>Review & Pricing Action</th>
             </tr>
         </thead>
         <tbody>
-            <?php if (mysqli_num_rows($customOrders) > 0): ?>
+            <?php if ($customOrders && mysqli_num_rows($customOrders) > 0): ?>
                 <?php while ($co = mysqli_fetch_assoc($customOrders)): ?>
                     <tr>
                         <td>#CR-<?php echo $co['id']; ?></td>
@@ -80,10 +91,10 @@ while ($r = mysqli_fetch_assoc($riders)) {
                         </td>
                         <td>
                             <a href="../../assets/images/uploads/<?php echo $co['sample_image']; ?>" target="_blank">
-                                <img src="../../assets/images/uploads/<?php echo $co['sample_image']; ?>" alt="Sample" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc;" onerror="this.src='../../assets/images/sample1.jpg';">
+                                <img src="../../assets/images/uploads/<?php echo $co['sample_image']; ?>" alt="Sample" style="width: 48px; height: 48px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc;" onerror="this.src='../../assets/images/sample1.jpg';">
                             </a>
                         </td>
-                        <td><?php echo number_format($co['budget'], 2); ?> ৳</td>
+                        <td><strong><?php echo number_format($co['budget'], 2); ?> ৳</strong></td>
                         <td>
                             <span class="badge <?php echo ($co['status'] === 'Accepted') ? 'badge-ready' : (($co['status'] === 'Rejected') ? 'badge-danger' : 'badge-pending'); ?>">
                                 <?php echo htmlspecialchars($co['status']); ?>
@@ -91,11 +102,17 @@ while ($r = mysqli_fetch_assoc($riders)) {
                         </td>
                         <td>
                             <?php if ($co['status'] === 'Pending Review'): ?>
-                                <a href="../../Controller/AdminController.php?action=accept&order_id=<?php echo $co['id']; ?>" class="btn-action btn-approve" style="display:inline-block; text-decoration:none; text-align:center;">Accept</a>
-                                <br><br>
-                                <a href="../../Controller/AdminController.php?action=reject&order_id=<?php echo $co['id']; ?>" class="btn-action btn-reject" style="display:inline-block; text-decoration:none; text-align:center;">Reject</a>
+                                <form action="../../Controller/AdminController.php" method="POST" style="margin: 0; display: flex; flex-direction: column; gap: 5px;">
+                                    <input type="hidden" name="action" value="accept_and_quote">
+                                    <input type="hidden" name="order_id" value="<?php echo $co['id']; ?>">
+                                    <input type="number" step="0.01" name="final_price" placeholder="Set Price (৳)" value="<?php echo ($co['budget'] > 0) ? $co['budget'] : ''; ?>" required style="padding: 5px; font-size: 12px; border: 1px solid #ccc; border-radius: 4px; width: 120px;">
+                                    <button type="submit" style="background: #28a745; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: bold;">Accept & Send Price</button>
+                                </form>
+                                <a href="../../Controller/AdminController.php?action=reject&order_id=<?php echo $co['id']; ?>" style="color: #e53e3e; font-size: 11px; text-decoration: none; margin-top: 4px; display: inline-block;">Reject Request</a>
+                            <?php elseif ($co['status'] === 'Accepted'): ?>
+                                <span style="color: #2b6cb0; font-size: 12px; font-weight: bold;">Quotation Sent (Waiting for Customer)</span>
                             <?php else: ?>
-                                <small style="color: #888;">Processed</small>
+                                <small style="color: #888;"><?php echo htmlspecialchars($co['status']); ?></small>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -125,8 +142,9 @@ while ($r = mysqli_fetch_assoc($riders)) {
             </tr>
         </thead>
         <tbody>
-            <?php if (mysqli_num_rows($storeOrders) > 0): ?>
+            <?php if ($storeOrders && mysqli_num_rows($storeOrders) > 0): ?>
                 <?php while ($ord = mysqli_fetch_assoc($storeOrders)): ?>
+                    <?php $isConfirmed = (strtolower($ord['status']) === 'confirmed'); ?>
                     <tr>
                         <td><b>#ORD-<?php echo $ord['id']; ?></b></td>
                         <td>
@@ -141,27 +159,39 @@ while ($r = mysqli_fetch_assoc($riders)) {
                         </td>
                         <td><?php echo number_format($ord['total_price'], 2); ?> ৳</td>
                         <td>
-                            <form action="../../Controller/AdminController.php" method="POST" style="margin: 0;">
-                                <input type="hidden" name="action" value="assign_rider">
-                                <input type="hidden" name="order_id" value="<?php echo $ord['id']; ?>">
-                                <input type="hidden" name="address" value="<?php echo htmlspecialchars($ord['delivery_address']); ?>">
-                                <select name="rider_id" class="table-select" onchange="this.form.submit()">
-                                    <option value="">-- Select Rider --</option>
-                                    <?php foreach ($riderList as $rider): ?>
-                                        <option value="<?php echo $rider['id']; ?>" <?php echo (isset($ord['rider_id']) && $ord['rider_id'] == $rider['id']) ? 'selected' : ''; ?>>
-                                            Rider: <?php echo htmlspecialchars($rider['name']); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </form>
+                            <?php if ($isConfirmed): ?>
+                                <form action="../../Controller/AdminController.php" method="POST" style="margin: 0; display: flex; flex-direction: column; gap: 5px;">
+                                    <input type="hidden" name="action" value="assign_rider">
+                                    <input type="hidden" name="order_id" value="<?php echo $ord['id']; ?>">
+                                    <input type="hidden" name="address" value="<?php echo htmlspecialchars($ord['delivery_address']); ?>">
+                                    <select name="rider_id" class="table-select" required style="font-size: 12px; padding: 4px;">
+                                        <option value="">-- Select Rider --</option>
+                                        <?php foreach ($riderList as $rider): ?>
+                                            <option value="<?php echo $rider['id']; ?>" <?php echo (isset($ord['rider_id']) && $ord['rider_id'] == $rider['id']) ? 'selected' : ''; ?>>
+                                                Rider: <?php echo htmlspecialchars($rider['name']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button type="submit" style="background: #2b6cb0; color: white; border: none; padding: 4px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; cursor: pointer;">
+                                        <?php echo (!empty($ord['rider_id'])) ? 'Re-assign Rider' : 'Assign Rider'; ?>
+                                    </button>
+                                </form>
+                                <?php if (!empty($ord['rider_name'])): ?>
+                                    <small style="color: #28a745; font-weight: bold; margin-top: 3px; display: block;">Assigned: <?php echo htmlspecialchars($ord['rider_name']); ?></small>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <small style="color: #718096;">Verify payment to enable rider assignment</small>
+                            <?php endif; ?>
                         </td>
                         <td>
-                            <span class="badge <?php echo ($ord['status'] === 'Confirmed') ? 'badge-ready' : 'badge-making'; ?>">
-                                <?php echo htmlspecialchars($ord['status']); ?>
+                            <span class="badge <?php echo $isConfirmed ? 'badge-ready' : 'badge-making'; ?>">
+                                <?php echo $isConfirmed ? 'Order Confirmed' : 'Verifying Request'; ?>
                             </span>
-                            <?php if ($ord['status'] === 'Payment pending'): ?>
+                            <?php if (!$isConfirmed): ?>
                                 <br><br>
-                                <a href="../../Controller/AdminController.php?action=confirm_order&order_id=<?php echo $ord['id']; ?>" style="color: #28a745; font-weight: bold; text-decoration: none; font-size: 12px; border: 1px solid #28a745; padding: 3px 6px; border-radius: 3px;">Verify & Confirm</a>
+                                <a href="../../Controller/AdminController.php?action=confirm_order&order_id=<?php echo $ord['id']; ?>" style="color: #28a745; font-weight: bold; text-decoration: none; font-size: 12px; border: 1px solid #28a745; padding: 4px 8px; border-radius: 3px; background: #eafaf1; display: inline-block;">Verify & Confirm</a>
+                            <?php else: ?>
+                                <br><small style="color: #28a745; font-weight: bold;">✔ Verified & Crafting</small>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -192,7 +222,7 @@ while ($r = mysqli_fetch_assoc($riders)) {
             </tr>
         </thead>
         <tbody>
-            <?php if (mysqli_num_rows($registrations) > 0): ?>
+            <?php if ($registrations && mysqli_num_rows($registrations) > 0): ?>
                 <?php while ($u = mysqli_fetch_assoc($registrations)): ?>
                     <tr>
                         <td>#UID-<?php echo $u['id']; ?></td>
@@ -210,8 +240,8 @@ while ($r = mysqli_fetch_assoc($riders)) {
                             <button type="button" 
                                     id="btn-user-<?php echo $u['id']; ?>" 
                                     onclick="toggleUserStatus(<?php echo $u['id']; ?>, '<?php echo $targetStatus; ?>')" 
-                                    style="background: <?php echo ($u['status'] === 'Active') ? '#e53e3e' : '#28a745'; ?>; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s;">
-                                ⚡ <?php echo ($u['status'] === 'Active') ? 'Suspend' : 'Approve'; ?>
+                                    style="background: <?php echo ($u['status'] === 'Active') ? '#e53e3e' : '#28a745'; ?>; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">
+                                <?php echo ($u['status'] === 'Active') ? 'Suspend' : 'Approve'; ?>
                             </button>
                         </td>
                     </tr>
@@ -230,8 +260,8 @@ while ($r = mysqli_fetch_assoc($riders)) {
         <span style="color: #666; font-size: 14px;">Logged in as: <strong>Admin</strong></span>
     </div>
     <div>
-        <a href="../../index.php" style="background-color: #e2e8f0; color: #333; padding: 10px 18px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; margin-right: 10px;">← View Shop</a>
-        <a href="../../Controller/AuthController.php?action=logout" style="background-color: #e53e3e; color: white; padding: 10px 22px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; display: inline-block;">Logout from Admin Panel</a>
+        <a href="../../index.php" style="background-color: #e2e8f0; color: #333; padding: 10px 18px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; margin-right: 10px;">View Shop</a>
+        <a href="../../Controller/AuthController.php?action=logout" style="background-color: #e53e3e; color: white; padding: 10px 22px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; display: inline-block;">Logout</a>
     </div>
 </div>
 
@@ -241,7 +271,7 @@ function toggleUserStatus(userId, targetStatus) {
     const badge = document.getElementById('user-badge-' + userId);
     const originalText = btn.innerText;
 
-    btn.innerText = 'Updating... ⏳';
+    btn.innerText = 'Updating...';
     btn.disabled = true;
 
     const xhr = new XMLHttpRequest();
@@ -258,19 +288,26 @@ function toggleUserStatus(userId, targetStatus) {
                     badge.className = 'badge ' + (res.new_status === 'Active' ? 'badge-ready' : 'badge-danger');
 
                     const nextStatus = (res.new_status === 'Active') ? 'Suspended' : 'Active';
-                    btn.innerText = '⚡ ' + (res.new_status === 'Active' ? 'Suspend' : 'Approve');
+                    btn.innerText = (res.new_status === 'Active') ? 'Suspend' : 'Approve';
                     btn.style.backgroundColor = (res.new_status === 'Active') ? '#e53e3e' : '#28a745';
                     btn.setAttribute('onclick', `toggleUserStatus(${userId}, '${nextStatus}')`);
+
+                    if (res.riders_count !== undefined) {
+                        document.getElementById('stat-riders').innerText = res.riders_count;
+                    }
+                    if (res.sellers_count !== undefined) {
+                        document.getElementById('stat-sellers').innerText = res.sellers_count;
+                    }
                 } else {
                     alert('Error: ' + res.message);
                     btn.innerText = originalText;
                 }
             } catch(e) {
-                console.error('JSON parse error', e);
+                console.error(e);
                 btn.innerText = originalText;
             }
         } else {
-            alert('Server error occurred.');
+            alert('Server error occurred');
             btn.innerText = originalText;
         }
     };
@@ -279,6 +316,4 @@ function toggleUserStatus(userId, targetStatus) {
 }
 </script>
 
-<?php
-require_once __DIR__ . '/../layouts/footer.php';
-?>
+<?php require_once __DIR__ . '/../layouts/footer.php'; ?>
